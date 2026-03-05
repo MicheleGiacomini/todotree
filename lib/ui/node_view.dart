@@ -116,13 +116,15 @@ class _NodeListState extends State<NodeList> {
               ),
             ),
           ),
-          leading: ClickableIcon(
-            icon: Icons.home,
-            onTap: () {
-              setState(() {
-                currentBase = widget.treeRoot;
-              });
-            },
+          leading: Center(
+            child: ClickableIcon(
+              icon: Icons.home,
+              onTap: () {
+                setState(() {
+                  currentBase = widget.treeRoot;
+                });
+              },
+            ),
           ),
           actions: [
             ClickableIcon(
@@ -168,12 +170,17 @@ class _NodeListState extends State<NodeList> {
                       nodeProvider: _nodeProvider,
                       level: item.depth,
                       levelPadding: levelPadding,
-                      expanded: expandedNodes[id] ?? false,
-                      onExpand: () {
-                        setState(() {
-                          expandedNodes[id] = !(expandedNodes[id] ?? false);
-                        });
-                      },
+                      expanded:
+                          item.node.children.isNotEmpty &&
+                          (expandedNodes[id] ?? false),
+                      onExpand: item.node.children.isEmpty
+                          ? null
+                          : () {
+                              setState(() {
+                                expandedNodes[id] =
+                                    !(expandedNodes[id] ?? false);
+                              });
+                            },
                       onEnter: () {
                         setState(() {
                           currentBase = id;
@@ -227,7 +234,7 @@ class NodeView extends StatelessWidget {
   final int level;
   final double levelPadding;
   final bool expanded;
-  final void Function() onExpand;
+  final void Function()? onExpand;
   final void Function() onEnter;
   final void Function() onCreateChild;
   final void Function() onPrune;
@@ -260,7 +267,9 @@ class NodeView extends StatelessWidget {
         leading: AnimatedRotation(
           turns: effectiveIconTurns,
           duration: animationDuration,
-          child: Icon(Icons.chevron_right),
+          child: onExpand == null
+              ? Icon(Icons.remove)
+              : Icon(Icons.chevron_right),
         ),
         title: Text(node.description.content),
         trailing: Row(
