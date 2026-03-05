@@ -88,6 +88,15 @@ class InMemoryRepository implements ElementRepository {
   }
 
   @override
+  Future<ISet<Tag>> getTags() async {
+    final tags = <Tag>{};
+    for (final node in nodes.values) {
+      tags.addAll(node.tags);
+    }
+    return tags.toISet();
+  }
+
+  @override
   Future<NodeId> getRootId() async => _rootId;
 
   @override

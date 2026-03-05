@@ -1,4 +1,5 @@
-import 'package:collection/collection.dart';
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:todotree/domain/element.dart';
 
@@ -10,6 +11,7 @@ class NodeList extends StatefulWidget {
   final void Function(NodeId) onCreateNewAt;
   final void Function(NodeId) onPrune;
   final void Function(NodeId child, NodeId newParent) onReparent;
+  final void Function(NodeId) onEdit;
 
   const NodeList({
     super.key,
@@ -18,6 +20,7 @@ class NodeList extends StatefulWidget {
     required this.onCreateNewAt,
     required this.onPrune,
     required this.onReparent,
+    required this.onEdit,
   });
 
   @override
@@ -185,6 +188,9 @@ class _NodeListState extends State<NodeList> {
                       onPrune: () {
                         widget.onPrune(id);
                       },
+                      onEdit: () {
+                        widget.onEdit(id);
+                      },
                     );
                     return LongPressDraggable(
                       delay: Duration(milliseconds: 200),
@@ -225,6 +231,7 @@ class NodeView extends StatelessWidget {
   final void Function() onEnter;
   final void Function() onCreateChild;
   final void Function() onPrune;
+  final void Function() onEdit;
   final Duration animationDuration;
 
   const NodeView({
@@ -238,6 +245,7 @@ class NodeView extends StatelessWidget {
     required this.onEnter,
     required this.onCreateChild,
     required this.onPrune,
+    required this.onEdit,
     this.animationDuration = const Duration(milliseconds: 300),
   });
 
@@ -258,8 +266,9 @@ class NodeView extends StatelessWidget {
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ClickableIcon(icon: Icons.folder_open, onTap: onEnter),
+            ClickableIcon(icon: Icons.edit, onTap: onEdit),
             ClickableIcon(icon: Icons.add_circle, onTap: onCreateChild),
+            ClickableIcon(icon: Icons.folder_open, onTap: onEnter),
             ClickableIcon(icon: Icons.delete, onTap: onPrune),
           ],
         ),
@@ -268,16 +277,41 @@ class NodeView extends StatelessWidget {
   }
 }
 
-class ClickableIcon extends StatelessWidget {
+class ClickableIcon extends StatefulWidget {
   final void Function()? onTap;
   final IconData icon;
   const ClickableIcon({super.key, required this.icon, this.onTap});
 
   @override
+  State<ClickableIcon> createState() => _ClickableIconState();
+}
+
+class _ClickableIconState extends State<ClickableIcon> {
+  bool _hovered = false;
+
+  @override
   Widget build(BuildContext context) {
     return MouseRegion(
+      onEnter: (event) => setState(() {
+        _hovered = true;
+      }),
+      onExit: (event) => setState(() {
+        _hovered = false;
+      }),
       cursor: SystemMouseCursors.click,
-      child: GestureDetector(onTap: onTap, child: Icon(icon)),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: Stack(
+          children: [
+            Icon(widget.icon),
+            if (_hovered)
+              ImageFiltered(
+                imageFilter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                child: Icon(widget.icon),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }

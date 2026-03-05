@@ -1,6 +1,8 @@
+import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
 import 'package:todotree/storage/element_repository.dart';
 import 'package:todotree/storage/in_memory_repository.dart';
+import 'package:todotree/ui/node_editor.dart';
 import 'package:todotree/utils/random_string.dart';
 
 import 'domain/element.dart';
@@ -19,21 +21,6 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
       home: const MyHomePage(title: 'Flutter Demo Home Page'),
@@ -43,15 +30,6 @@ class MyApp extends StatelessWidget {
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
 
   final String title;
 
@@ -64,26 +42,31 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: FutureBuilder(
-        future: Future.wait([repository.getElements(), repository.getRootId()]),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text("Error: ${snapshot.error}"));
-          } else {
-            final data = snapshot.data!;
-            final elements = data[0] as Map<NodeId, Node>;
-            final rootId = data[1] as NodeId;
-            return _MainPageContent(
-              repository: repository,
-              initialNodes: elements,
-              rootNode: rootId,
-            );
-          }
-        },
-      ),
+    return FutureBuilder(
+      future: Future.wait([
+        repository.getElements(),
+        repository.getRootId(),
+        repository.getTags(),
+      ]),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return Center(child: Text("Error: ${snapshot.error}"));
+        } else {
+          final data = snapshot.data!;
+          final elements = data[0] as Map<NodeId, Node>;
+          final rootId = data[1] as NodeId;
+          final tags = data[2] as ISet<Tag>;
+
+          return _MainPageContent(
+            repository: repository,
+            initialNodes: elements,
+            rootNode: rootId,
+            initialTagList: tags.toSet(),
+          );
+        }
+      },
     );
   }
 }
@@ -92,11 +75,13 @@ class _MainPageContent extends StatefulWidget {
   final ElementRepository repository;
   final Map<NodeId, Node> initialNodes;
   final NodeId rootNode;
+  final Set<Tag> initialTagList;
 
   const _MainPageContent({
     required this.repository,
     required this.initialNodes,
     required this.rootNode,
+    required this.initialTagList,
   });
 
   @override
@@ -105,10 +90,14 @@ class _MainPageContent extends StatefulWidget {
 
 class __MainPageContentState extends State<_MainPageContent> {
   late Map<NodeId, Node> nodes;
+  NodeId? nodeBeingEdited;
+  static final _scaffoldKey = GlobalKey<ScaffoldState>();
+  late Set<Tag> tags;
 
   @override
   void initState() {
-    nodes = widget.initialNodes;
+    nodes = {...widget.initialNodes};
+    tags = {...widget.initialTagList};
     super.initState();
   }
 
@@ -137,18 +126,58 @@ class __MainPageContentState extends State<_MainPageContent> {
     setState(() {});
   }
 
+  Future<void> _updateDescription(
+    NodeId id,
+    NodeDescription description,
+  ) async {
+    final result = await widget.repository.updateDesription(id, description);
+    nodes[result.id] = result;
+    setState(() {});
+  }
+
+  Future<void> _updateDetails(NodeId id, NodeDetails details) async {
+    final result = await widget.repository.updateDetails(id, details);
+    nodes[result.id] = result;
+    setState(() {});
+  }
+
+  void _onEditNode(NodeId id) {
+    setState(() {
+      nodeBeingEdited = id;
+    });
+    _scaffoldKey.currentState?.openEndDrawer();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return CustomScrollView(
-      slivers: [
-        NodeList(
-          nodes: nodes,
-          treeRoot: widget.rootNode,
-          onCreateNewAt: _createNewAt,
-          onPrune: _prune,
-          onReparent: _reparent,
-        ),
-      ],
+    return Scaffold(
+      key: _scaffoldKey,
+      endDrawer: nodeBeingEdited == null
+          ? null
+          : Drawer(
+              child: NodeEditor(
+                nodeId: nodeBeingEdited!,
+                nodeProvider: (NodeId p1) => nodes[p1]!,
+                onUpdateDescription: (desc) =>
+                    _updateDescription(nodeBeingEdited!, desc),
+                onUpdateDetails: (details) =>
+                    _updateDetails(nodeBeingEdited!, details),
+                onUpdateTags: (tags) {},
+                tagList: tags.toISet(),
+              ),
+            ),
+      body: CustomScrollView(
+        slivers: [
+          NodeList(
+            nodes: nodes,
+            treeRoot: widget.rootNode,
+            onCreateNewAt: _createNewAt,
+            onPrune: _prune,
+            onReparent: _reparent,
+            onEdit: _onEditNode,
+          ),
+        ],
+      ),
     );
   }
 }

@@ -47,6 +47,7 @@ sealed class Operation with _$Operation {
 
 abstract interface class ElementRepository {
   Future<Map<NodeId, Node>> getElements();
+  Future<ISet<Tag>> getTags();
   Future<NodeId> getRootId();
   Future<Node> updateDesription(NodeId id, NodeDescription newDescription);
   Future<Node> updateDetails(NodeId id, NodeDetails newDetails);
