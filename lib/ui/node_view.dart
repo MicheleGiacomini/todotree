@@ -1,7 +1,6 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:todotree/domain/element.dart';
+import 'package:todotree/ui/clickable_icon.dart';
 import 'package:todotree/ui/debounced_text_field.dart';
 
 typedef NodeProvider = Node Function(NodeId);
@@ -139,7 +138,9 @@ class _NodeListState extends State<NodeList> {
           ),
           actions: [
             ClickableIcon(
-              icon: widget.allowMultipleEdits ? Icons.layers : Icons.layers_clear,
+              icon: widget.allowMultipleEdits
+                  ? Icons.layers
+                  : Icons.layers_clear,
               onTap: widget.onToggleMultiEdit,
             ),
             ClickableIcon(
@@ -296,8 +297,9 @@ class _NodeViewState extends State<NodeView> {
   void initState() {
     super.initState();
     final node = widget.nodeProvider(widget.nodeId);
-    _descriptionController =
-        TextEditingController(text: node.description.content);
+    _descriptionController = TextEditingController(
+      text: node.description.content,
+    );
     _detailsController = TextEditingController(text: node.details.content);
   }
 
@@ -405,45 +407,6 @@ class _NodeViewState extends State<NodeView> {
                     ),
                   ],
                 ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class ClickableIcon extends StatefulWidget {
-  final void Function()? onTap;
-  final IconData icon;
-  const ClickableIcon({super.key, required this.icon, this.onTap});
-
-  @override
-  State<ClickableIcon> createState() => _ClickableIconState();
-}
-
-class _ClickableIconState extends State<ClickableIcon> {
-  bool _hovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (event) => setState(() {
-        _hovered = true;
-      }),
-      onExit: (event) => setState(() {
-        _hovered = false;
-      }),
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: Stack(
-          children: [
-            Icon(widget.icon),
-            if (_hovered)
-              ImageFiltered(
-                imageFilter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                child: Icon(widget.icon),
               ),
           ],
         ),
