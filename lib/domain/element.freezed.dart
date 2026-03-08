@@ -11,6 +11,7 @@ part of 'element.dart';
 
 // dart format off
 T _$identity<T>(T value) => value;
+
 /// @nodoc
 mixin _$Tag {
 
@@ -21,6 +22,8 @@ mixin _$Tag {
 @pragma('vm:prefer-inline')
 $TagCopyWith<Tag> get copyWith => _$TagCopyWithImpl<Tag>(this as Tag, _$identity);
 
+  /// Serializes this Tag to a JSON map.
+  Map<String, dynamic> toJson();
 
 
 @override
@@ -28,7 +31,7 @@ bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is Tag&&(identical(other.name, name) || other.name == name));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode => Object.hash(runtimeType,name);
 
@@ -203,11 +206,11 @@ return $default(_that.name);case _:
 }
 
 /// @nodoc
-
+@JsonSerializable()
 
 class _Tag implements Tag {
   const _Tag({required this.name});
-  
+  factory _Tag.fromJson(Map<String, dynamic> json) => _$TagFromJson(json);
 
 @override final  String name;
 
@@ -217,14 +220,17 @@ class _Tag implements Tag {
 @pragma('vm:prefer-inline')
 _$TagCopyWith<_Tag> get copyWith => __$TagCopyWithImpl<_Tag>(this, _$identity);
 
-
+@override
+Map<String, dynamic> toJson() {
+  return _$TagToJson(this, );
+}
 
 @override
 bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is _Tag&&(identical(other.name, name) || other.name == name));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode => Object.hash(runtimeType,name);
 
@@ -268,6 +274,7 @@ as String,
 
 }
 
+
 /// @nodoc
 mixin _$NodeDescription {
 
@@ -278,6 +285,8 @@ mixin _$NodeDescription {
 @pragma('vm:prefer-inline')
 $NodeDescriptionCopyWith<NodeDescription> get copyWith => _$NodeDescriptionCopyWithImpl<NodeDescription>(this as NodeDescription, _$identity);
 
+  /// Serializes this NodeDescription to a JSON map.
+  Map<String, dynamic> toJson();
 
 
 @override
@@ -285,7 +294,7 @@ bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is NodeDescription&&(identical(other.content, content) || other.content == content));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode => Object.hash(runtimeType,content);
 
@@ -460,11 +469,11 @@ return $default(_that.content);case _:
 }
 
 /// @nodoc
-
+@JsonSerializable()
 
 class _NodeDescription implements NodeDescription {
   const _NodeDescription({required this.content});
-  
+  factory _NodeDescription.fromJson(Map<String, dynamic> json) => _$NodeDescriptionFromJson(json);
 
 @override final  String content;
 
@@ -474,14 +483,17 @@ class _NodeDescription implements NodeDescription {
 @pragma('vm:prefer-inline')
 _$NodeDescriptionCopyWith<_NodeDescription> get copyWith => __$NodeDescriptionCopyWithImpl<_NodeDescription>(this, _$identity);
 
-
+@override
+Map<String, dynamic> toJson() {
+  return _$NodeDescriptionToJson(this, );
+}
 
 @override
 bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is _NodeDescription&&(identical(other.content, content) || other.content == content));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode => Object.hash(runtimeType,content);
 
@@ -525,6 +537,7 @@ as String,
 
 }
 
+
 /// @nodoc
 mixin _$NodeDetails {
 
@@ -535,6 +548,8 @@ mixin _$NodeDetails {
 @pragma('vm:prefer-inline')
 $NodeDetailsCopyWith<NodeDetails> get copyWith => _$NodeDetailsCopyWithImpl<NodeDetails>(this as NodeDetails, _$identity);
 
+  /// Serializes this NodeDetails to a JSON map.
+  Map<String, dynamic> toJson();
 
 
 @override
@@ -542,7 +557,7 @@ bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is NodeDetails&&(identical(other.content, content) || other.content == content));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode => Object.hash(runtimeType,content);
 
@@ -717,11 +732,11 @@ return $default(_that.content);case _:
 }
 
 /// @nodoc
-
+@JsonSerializable()
 
 class _NodeDetails implements NodeDetails {
   const _NodeDetails({required this.content});
-  
+  factory _NodeDetails.fromJson(Map<String, dynamic> json) => _$NodeDetailsFromJson(json);
 
 @override final  String content;
 
@@ -731,14 +746,17 @@ class _NodeDetails implements NodeDetails {
 @pragma('vm:prefer-inline')
 _$NodeDetailsCopyWith<_NodeDetails> get copyWith => __$NodeDetailsCopyWithImpl<_NodeDetails>(this, _$identity);
 
-
+@override
+Map<String, dynamic> toJson() {
+  return _$NodeDetailsToJson(this, );
+}
 
 @override
 bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is _NodeDetails&&(identical(other.content, content) || other.content == content));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode => Object.hash(runtimeType,content);
 
@@ -782,16 +800,19 @@ as String,
 
 }
 
+
 /// @nodoc
 mixin _$Node {
 
- NodeId get id; NodeDescription get description; NodeDetails get details; IList<Tag> get tags; IList<NodeId> get children;
+ NodeId get id; NodeDescription get description; NodeDetails get details;@IListConverter<Tag>() IList<Tag> get tags;@IListConverter<NodeId>() IList<NodeId> get children;
 /// Create a copy of Node
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
 $NodeCopyWith<Node> get copyWith => _$NodeCopyWithImpl<Node>(this as Node, _$identity);
 
+  /// Serializes this Node to a JSON map.
+  Map<String, dynamic> toJson();
 
 
 @override
@@ -799,7 +820,7 @@ bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is Node&&(identical(other.id, id) || other.id == id)&&(identical(other.description, description) || other.description == description)&&(identical(other.details, details) || other.details == details)&&const DeepCollectionEquality().equals(other.tags, tags)&&const DeepCollectionEquality().equals(other.children, children));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode => Object.hash(runtimeType,id,description,details,const DeepCollectionEquality().hash(tags),const DeepCollectionEquality().hash(children));
 
@@ -816,7 +837,7 @@ abstract mixin class $NodeCopyWith<$Res>  {
   factory $NodeCopyWith(Node value, $Res Function(Node) _then) = _$NodeCopyWithImpl;
 @useResult
 $Res call({
- NodeId id, NodeDescription description, NodeDetails details, IList<Tag> tags, IList<NodeId> children
+ NodeId id, NodeDescription description, NodeDetails details,@IListConverter<Tag>() IList<Tag> tags,@IListConverter<NodeId>() IList<NodeId> children
 });
 
 
@@ -943,7 +964,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( NodeId id,  NodeDescription description,  NodeDetails details,  IList<Tag> tags,  IList<NodeId> children)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( NodeId id,  NodeDescription description,  NodeDetails details, @IListConverter<Tag>()  IList<Tag> tags, @IListConverter<NodeId>()  IList<NodeId> children)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Node() when $default != null:
 return $default(_that.id,_that.description,_that.details,_that.tags,_that.children);case _:
@@ -964,7 +985,7 @@ return $default(_that.id,_that.description,_that.details,_that.tags,_that.childr
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( NodeId id,  NodeDescription description,  NodeDetails details,  IList<Tag> tags,  IList<NodeId> children)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( NodeId id,  NodeDescription description,  NodeDetails details, @IListConverter<Tag>()  IList<Tag> tags, @IListConverter<NodeId>()  IList<NodeId> children)  $default,) {final _that = this;
 switch (_that) {
 case _Node():
 return $default(_that.id,_that.description,_that.details,_that.tags,_that.children);case _:
@@ -984,7 +1005,7 @@ return $default(_that.id,_that.description,_that.details,_that.tags,_that.childr
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( NodeId id,  NodeDescription description,  NodeDetails details,  IList<Tag> tags,  IList<NodeId> children)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( NodeId id,  NodeDescription description,  NodeDetails details, @IListConverter<Tag>()  IList<Tag> tags, @IListConverter<NodeId>()  IList<NodeId> children)?  $default,) {final _that = this;
 switch (_that) {
 case _Node() when $default != null:
 return $default(_that.id,_that.description,_that.details,_that.tags,_that.children);case _:
@@ -996,17 +1017,17 @@ return $default(_that.id,_that.description,_that.details,_that.tags,_that.childr
 }
 
 /// @nodoc
-
+@JsonSerializable()
 
 class _Node implements Node {
-  const _Node({required this.id, required this.description, required this.details, required this.tags, required this.children});
-  
+  const _Node({required this.id, required this.description, required this.details, @IListConverter<Tag>() required this.tags, @IListConverter<NodeId>() required this.children});
+  factory _Node.fromJson(Map<String, dynamic> json) => _$NodeFromJson(json);
 
 @override final  NodeId id;
 @override final  NodeDescription description;
 @override final  NodeDetails details;
-@override final  IList<Tag> tags;
-@override final  IList<NodeId> children;
+@override@IListConverter<Tag>() final  IList<Tag> tags;
+@override@IListConverter<NodeId>() final  IList<NodeId> children;
 
 /// Create a copy of Node
 /// with the given fields replaced by the non-null parameter values.
@@ -1014,14 +1035,17 @@ class _Node implements Node {
 @pragma('vm:prefer-inline')
 _$NodeCopyWith<_Node> get copyWith => __$NodeCopyWithImpl<_Node>(this, _$identity);
 
-
+@override
+Map<String, dynamic> toJson() {
+  return _$NodeToJson(this, );
+}
 
 @override
 bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is _Node&&(identical(other.id, id) || other.id == id)&&(identical(other.description, description) || other.description == description)&&(identical(other.details, details) || other.details == details)&&const DeepCollectionEquality().equals(other.tags, tags)&&const DeepCollectionEquality().equals(other.children, children));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode => Object.hash(runtimeType,id,description,details,const DeepCollectionEquality().hash(tags),const DeepCollectionEquality().hash(children));
 
@@ -1038,7 +1062,7 @@ abstract mixin class _$NodeCopyWith<$Res> implements $NodeCopyWith<$Res> {
   factory _$NodeCopyWith(_Node value, $Res Function(_Node) _then) = __$NodeCopyWithImpl;
 @override @useResult
 $Res call({
- NodeId id, NodeDescription description, NodeDetails details, IList<Tag> tags, IList<NodeId> children
+ NodeId id, NodeDescription description, NodeDetails details,@IListConverter<Tag>() IList<Tag> tags,@IListConverter<NodeId>() IList<NodeId> children
 });
 
 

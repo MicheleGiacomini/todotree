@@ -1,7 +1,7 @@
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
 import 'package:todotree/storage/element_repository.dart';
-import 'package:todotree/storage/in_memory_repository.dart';
+import 'package:todotree/storage/json_repository.dart';
 import 'package:todotree/utils/random_string.dart';
 
 import 'domain/element.dart';
@@ -37,34 +37,67 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final repository = InMemoryRepository();
+  late Future<JsonRepository> _repositoryFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _repositoryFuture = JsonRepository.init();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
-      future: Future.wait([
-        repository.getElements(),
-        repository.getRootId(),
-        repository.getTags(),
-      ]),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          return Center(child: Text("Error: ${snapshot.error}"));
-        } else {
-          final data = snapshot.data!;
-          final elements = data[0] as Map<NodeId, Node>;
-          final rootId = data[1] as NodeId;
-          final tags = data[2] as ISet<Tag>;
-
-          return _MainPageContent(
-            repository: repository,
-            initialNodes: elements,
-            rootNode: rootId,
-            initialTagList: tags.toSet(),
+    return FutureBuilder<JsonRepository>(
+      future: _repositoryFuture,
+      builder: (context, repoSnapshot) {
+        if (repoSnapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        } else if (repoSnapshot.hasError) {
+          return Scaffold(
+            body: Center(
+              child: SelectableText(
+                "Error initializing repository: ${repoSnapshot.error}",
+              ),
+            ),
           );
         }
+
+        final repository = repoSnapshot.data!;
+
+        return FutureBuilder(
+          future: Future.wait([
+            repository.getElements(),
+            repository.getRootId(),
+            repository.getTags(),
+          ]),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              );
+            } else if (snapshot.hasError) {
+              return Scaffold(
+                body: Center(
+                  child: Text("Error loading data: ${snapshot.error}"),
+                ),
+              );
+            } else {
+              final data = snapshot.data!;
+              final elements = data[0] as Map<NodeId, Node>;
+              final rootId = data[1] as NodeId;
+              final tags = data[2] as ISet<Tag>;
+
+              return _MainPageContent(
+                repository: repository,
+                initialNodes: elements,
+                rootNode: rootId,
+                initialTagList: tags.toSet(),
+              );
+            }
+          },
+        );
       },
     );
   }

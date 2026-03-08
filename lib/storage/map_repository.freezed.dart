@@ -3,7 +3,7 @@
 // ignore_for_file: type=lint
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
-part of 'in_memory_repository.dart';
+part of 'map_repository.dart';
 
 // **************************************************************************
 // FreezedGenerator
@@ -11,16 +11,19 @@ part of 'in_memory_repository.dart';
 
 // dart format off
 T _$identity<T>(T value) => value;
+
 /// @nodoc
 mixin _$StorageNode {
 
- NodeId get id; NodeId? get parentId; int get nodeIndex; NodeDescription get description; NodeDetails get details; ISet<Tag> get tags; IList<NodeId> get children;
+ NodeId get id; NodeId? get parentId; int get nodeIndex; NodeDescription get description; NodeDetails get details;@ISetConverter<Tag>() ISet<Tag> get tags;@IListConverter<NodeId>() IList<NodeId> get children;
 /// Create a copy of StorageNode
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
 $StorageNodeCopyWith<StorageNode> get copyWith => _$StorageNodeCopyWithImpl<StorageNode>(this as StorageNode, _$identity);
 
+  /// Serializes this StorageNode to a JSON map.
+  Map<String, dynamic> toJson();
 
 
 @override
@@ -28,7 +31,7 @@ bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is StorageNode&&(identical(other.id, id) || other.id == id)&&(identical(other.parentId, parentId) || other.parentId == parentId)&&(identical(other.nodeIndex, nodeIndex) || other.nodeIndex == nodeIndex)&&(identical(other.description, description) || other.description == description)&&(identical(other.details, details) || other.details == details)&&const DeepCollectionEquality().equals(other.tags, tags)&&const DeepCollectionEquality().equals(other.children, children));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode => Object.hash(runtimeType,id,parentId,nodeIndex,description,details,const DeepCollectionEquality().hash(tags),const DeepCollectionEquality().hash(children));
 
@@ -45,7 +48,7 @@ abstract mixin class $StorageNodeCopyWith<$Res>  {
   factory $StorageNodeCopyWith(StorageNode value, $Res Function(StorageNode) _then) = _$StorageNodeCopyWithImpl;
 @useResult
 $Res call({
- NodeId id, NodeId? parentId, int nodeIndex, NodeDescription description, NodeDetails details, ISet<Tag> tags, IList<NodeId> children
+ NodeId id, NodeId? parentId, int nodeIndex, NodeDescription description, NodeDetails details,@ISetConverter<Tag>() ISet<Tag> tags,@IListConverter<NodeId>() IList<NodeId> children
 });
 
 
@@ -174,7 +177,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( NodeId id,  NodeId? parentId,  int nodeIndex,  NodeDescription description,  NodeDetails details,  ISet<Tag> tags,  IList<NodeId> children)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( NodeId id,  NodeId? parentId,  int nodeIndex,  NodeDescription description,  NodeDetails details, @ISetConverter<Tag>()  ISet<Tag> tags, @IListConverter<NodeId>()  IList<NodeId> children)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _StorageNode() when $default != null:
 return $default(_that.id,_that.parentId,_that.nodeIndex,_that.description,_that.details,_that.tags,_that.children);case _:
@@ -195,7 +198,7 @@ return $default(_that.id,_that.parentId,_that.nodeIndex,_that.description,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( NodeId id,  NodeId? parentId,  int nodeIndex,  NodeDescription description,  NodeDetails details,  ISet<Tag> tags,  IList<NodeId> children)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( NodeId id,  NodeId? parentId,  int nodeIndex,  NodeDescription description,  NodeDetails details, @ISetConverter<Tag>()  ISet<Tag> tags, @IListConverter<NodeId>()  IList<NodeId> children)  $default,) {final _that = this;
 switch (_that) {
 case _StorageNode():
 return $default(_that.id,_that.parentId,_that.nodeIndex,_that.description,_that.details,_that.tags,_that.children);case _:
@@ -215,7 +218,7 @@ return $default(_that.id,_that.parentId,_that.nodeIndex,_that.description,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( NodeId id,  NodeId? parentId,  int nodeIndex,  NodeDescription description,  NodeDetails details,  ISet<Tag> tags,  IList<NodeId> children)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( NodeId id,  NodeId? parentId,  int nodeIndex,  NodeDescription description,  NodeDetails details, @ISetConverter<Tag>()  ISet<Tag> tags, @IListConverter<NodeId>()  IList<NodeId> children)?  $default,) {final _that = this;
 switch (_that) {
 case _StorageNode() when $default != null:
 return $default(_that.id,_that.parentId,_that.nodeIndex,_that.description,_that.details,_that.tags,_that.children);case _:
@@ -227,19 +230,19 @@ return $default(_that.id,_that.parentId,_that.nodeIndex,_that.description,_that.
 }
 
 /// @nodoc
-
+@JsonSerializable()
 
 class _StorageNode extends StorageNode {
-  const _StorageNode({required this.id, required this.parentId, required this.nodeIndex, required this.description, required this.details, required this.tags, required this.children}): super._();
-  
+  const _StorageNode({required this.id, required this.parentId, required this.nodeIndex, required this.description, required this.details, @ISetConverter<Tag>() required this.tags, @IListConverter<NodeId>() required this.children}): super._();
+  factory _StorageNode.fromJson(Map<String, dynamic> json) => _$StorageNodeFromJson(json);
 
 @override final  NodeId id;
 @override final  NodeId? parentId;
 @override final  int nodeIndex;
 @override final  NodeDescription description;
 @override final  NodeDetails details;
-@override final  ISet<Tag> tags;
-@override final  IList<NodeId> children;
+@override@ISetConverter<Tag>() final  ISet<Tag> tags;
+@override@IListConverter<NodeId>() final  IList<NodeId> children;
 
 /// Create a copy of StorageNode
 /// with the given fields replaced by the non-null parameter values.
@@ -247,14 +250,17 @@ class _StorageNode extends StorageNode {
 @pragma('vm:prefer-inline')
 _$StorageNodeCopyWith<_StorageNode> get copyWith => __$StorageNodeCopyWithImpl<_StorageNode>(this, _$identity);
 
-
+@override
+Map<String, dynamic> toJson() {
+  return _$StorageNodeToJson(this, );
+}
 
 @override
 bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is _StorageNode&&(identical(other.id, id) || other.id == id)&&(identical(other.parentId, parentId) || other.parentId == parentId)&&(identical(other.nodeIndex, nodeIndex) || other.nodeIndex == nodeIndex)&&(identical(other.description, description) || other.description == description)&&(identical(other.details, details) || other.details == details)&&const DeepCollectionEquality().equals(other.tags, tags)&&const DeepCollectionEquality().equals(other.children, children));
 }
 
-
+@JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode => Object.hash(runtimeType,id,parentId,nodeIndex,description,details,const DeepCollectionEquality().hash(tags),const DeepCollectionEquality().hash(children));
 
@@ -271,7 +277,7 @@ abstract mixin class _$StorageNodeCopyWith<$Res> implements $StorageNodeCopyWith
   factory _$StorageNodeCopyWith(_StorageNode value, $Res Function(_StorageNode) _then) = __$StorageNodeCopyWithImpl;
 @override @useResult
 $Res call({
- NodeId id, NodeId? parentId, int nodeIndex, NodeDescription description, NodeDetails details, ISet<Tag> tags, IList<NodeId> children
+ NodeId id, NodeId? parentId, int nodeIndex, NodeDescription description, NodeDetails details,@ISetConverter<Tag>() ISet<Tag> tags,@IListConverter<NodeId>() IList<NodeId> children
 });
 
 
