@@ -14,6 +14,10 @@ class NodeList extends StatefulWidget {
   final void Function(NodeId child, NodeId newParent) onReparent;
   final void Function(NodeId) onEdit;
   final void Function(NodeId, NodeDescription) onDescriptionChanged;
+  final void Function(NodeId, NodeDetails) onDetailsChanged;
+  final Set<NodeId> nodesBeingEdited;
+  final bool allowMultipleEdits;
+  final void Function() onToggleMultiEdit;
 
   const NodeList({
     super.key,
@@ -24,6 +28,10 @@ class NodeList extends StatefulWidget {
     required this.onReparent,
     required this.onEdit,
     required this.onDescriptionChanged,
+    required this.onDetailsChanged,
+    required this.nodesBeingEdited,
+    required this.allowMultipleEdits,
+    required this.onToggleMultiEdit,
   });
 
   @override
@@ -131,6 +139,10 @@ class _NodeListState extends State<NodeList> {
           ),
           actions: [
             ClickableIcon(
+              icon: widget.allowMultipleEdits ? Icons.layers : Icons.layers_clear,
+              onTap: widget.onToggleMultiEdit,
+            ),
+            ClickableIcon(
               icon: Icons.add_circle,
               onTap: () {
                 widget.onCreateNewAt(currentBase);
@@ -176,8 +188,12 @@ class _NodeListState extends State<NodeList> {
                       expanded:
                           item.node.children.isNotEmpty &&
                           (expandedNodes[id] ?? false),
+                      isEditing: widget.nodesBeingEdited.contains(id),
                       onDescriptionChanged: (p0) {
                         widget.onDescriptionChanged(id, p0);
+                      },
+                      onDetailsChanged: (p0) {
+                        widget.onDetailsChanged(id, p0);
                       },
                       onExpand: item.node.children.isEmpty
                           ? null
@@ -240,12 +256,14 @@ class NodeView extends StatefulWidget {
   final int level;
   final double levelPadding;
   final bool expanded;
+  final bool isEditing;
   final void Function()? onExpand;
   final void Function() onEnter;
   final void Function() onCreateChild;
   final void Function() onPrune;
   final void Function() onEdit;
   final void Function(NodeDescription) onDescriptionChanged;
+  final void Function(NodeDetails) onDetailsChanged;
   final Duration animationDuration;
 
   const NodeView({
@@ -255,12 +273,14 @@ class NodeView extends StatefulWidget {
     required this.level,
     required this.levelPadding,
     required this.expanded,
+    required this.isEditing,
     required this.onExpand,
     required this.onEnter,
     required this.onCreateChild,
     required this.onPrune,
     required this.onEdit,
     required this.onDescriptionChanged,
+    required this.onDetailsChanged,
     this.animationDuration = const Duration(milliseconds: 300),
   });
 
@@ -269,27 +289,34 @@ class NodeView extends StatefulWidget {
 }
 
 class _NodeViewState extends State<NodeView> {
-  late final TextEditingController _controller;
+  late final TextEditingController _descriptionController;
+  late final TextEditingController _detailsController;
 
   @override
   void initState() {
     super.initState();
     final node = widget.nodeProvider(widget.nodeId);
-    _controller = TextEditingController(text: node.description.content);
+    _descriptionController =
+        TextEditingController(text: node.description.content);
+    _detailsController = TextEditingController(text: node.details.content);
   }
 
   @override
   void didUpdateWidget(covariant NodeView oldWidget) {
     super.didUpdateWidget(oldWidget);
     final node = widget.nodeProvider(widget.nodeId);
-    if (_controller.text != node.description.content) {
-      _controller.text = node.description.content;
+    if (_descriptionController.text != node.description.content) {
+      _descriptionController.text = node.description.content;
+    }
+    if (_detailsController.text != node.details.content) {
+      _detailsController.text = node.details.content;
     }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _descriptionController.dispose();
+    _detailsController.dispose();
     super.dispose();
   }
 
@@ -305,34 +332,81 @@ class _NodeViewState extends State<NodeView> {
             bottom: BorderSide(color: theme.dividerColor, width: 1.0),
           ),
         ),
-        child: ListTile(
-          onTap: widget.onExpand,
-          leading: AnimatedRotation(
-            turns: effectiveIconTurns,
-            duration: widget.animationDuration,
-            child: widget.onExpand == null
-                ? Icon(Icons.remove)
-                : Icon(Icons.chevron_right),
-          ),
-          title: DebouncedTextField(
-            controller: _controller,
-            decoration: InputDecoration(border: InputBorder.none),
-            onChanged: (value) {
-              widget.onDescriptionChanged(NodeDescription(content: value));
-            },
-          ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ClickableIcon(icon: Icons.edit, onTap: widget.onEdit),
-              ClickableIcon(
-                icon: Icons.add_circle,
-                onTap: widget.onCreateChild,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              onTap: widget.onExpand,
+              leading: AnimatedRotation(
+                turns: effectiveIconTurns,
+                duration: widget.animationDuration,
+                child: widget.onExpand == null
+                    ? Icon(Icons.remove)
+                    : Icon(Icons.chevron_right),
               ),
-              ClickableIcon(icon: Icons.folder_open, onTap: widget.onEnter),
-              ClickableIcon(icon: Icons.delete, onTap: widget.onPrune),
-            ],
-          ),
+              title: DebouncedTextField(
+                controller: _descriptionController,
+                decoration: InputDecoration(border: InputBorder.none),
+                onChanged: (value) {
+                  widget.onDescriptionChanged(NodeDescription(content: value));
+                },
+              ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ClickableIcon(
+                    icon: widget.isEditing ? Icons.check : Icons.edit,
+                    onTap: widget.onEdit,
+                  ),
+                  ClickableIcon(
+                    icon: Icons.add_circle,
+                    onTap: widget.onCreateChild,
+                  ),
+                  ClickableIcon(icon: Icons.folder_open, onTap: widget.onEnter),
+                  ClickableIcon(icon: Icons.delete, onTap: widget.onPrune),
+                ],
+              ),
+            ),
+            if (widget.isEditing)
+              Padding(
+                padding: const EdgeInsets.only(
+                  left: 40.0,
+                  right: 16.0,
+                  bottom: 16.0,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    DebouncedTextField(
+                      controller: _detailsController,
+                      minLines: 3,
+                      maxLines: null,
+                      decoration: InputDecoration(
+                        labelText: "Details",
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (value) {
+                        widget.onDetailsChanged(NodeDetails(content: value));
+                      },
+                    ),
+                    const SizedBox(height: 8.0),
+                    // Placeholder for Tags
+                    Wrap(
+                      spacing: 8.0,
+                      children: [
+                        ActionChip(
+                          avatar: Icon(Icons.add, size: 16),
+                          label: Text("Add Tag"),
+                          onPressed: () {
+                            // TODO: Implement tag addition
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+          ],
         ),
       ),
     );

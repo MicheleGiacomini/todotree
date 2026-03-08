@@ -2,7 +2,6 @@ import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
 import 'package:todotree/storage/element_repository.dart';
 import 'package:todotree/storage/in_memory_repository.dart';
-import 'package:todotree/ui/node_editor.dart';
 import 'package:todotree/utils/random_string.dart';
 
 import 'domain/element.dart';
@@ -90,7 +89,8 @@ class _MainPageContent extends StatefulWidget {
 
 class __MainPageContentState extends State<_MainPageContent> {
   late Map<NodeId, Node> nodes;
-  NodeId? nodeBeingEdited;
+  Set<NodeId> nodesBeingEdited = {};
+  bool allowMultipleEdits = false;
   static final _scaffoldKey = GlobalKey<ScaffoldState>();
   late Set<Tag> tags;
 
@@ -143,29 +143,32 @@ class __MainPageContentState extends State<_MainPageContent> {
 
   void _onEditNode(NodeId id) {
     setState(() {
-      nodeBeingEdited = id;
+      if (nodesBeingEdited.contains(id)) {
+        nodesBeingEdited.remove(id);
+      } else {
+        if (!allowMultipleEdits) {
+          nodesBeingEdited.clear();
+        }
+        nodesBeingEdited.add(id);
+      }
     });
-    _scaffoldKey.currentState?.openEndDrawer();
+  }
+
+  void _onToggleMultiEdit() {
+    setState(() {
+      allowMultipleEdits = !allowMultipleEdits;
+      if (!allowMultipleEdits && nodesBeingEdited.length > 1) {
+        final first = nodesBeingEdited.first;
+        nodesBeingEdited.clear();
+        nodesBeingEdited.add(first);
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      endDrawer: nodeBeingEdited == null
-          ? null
-          : Drawer(
-              child: NodeEditor(
-                nodeId: nodeBeingEdited!,
-                nodeProvider: (NodeId p1) => nodes[p1]!,
-                onUpdateDescription: (desc) =>
-                    _updateDescription(nodeBeingEdited!, desc),
-                onUpdateDetails: (details) =>
-                    _updateDetails(nodeBeingEdited!, details),
-                onUpdateTags: (tags) {},
-                tagList: tags.toISet(),
-              ),
-            ),
       body: CustomScrollView(
         slivers: [
           NodeList(
@@ -176,6 +179,10 @@ class __MainPageContentState extends State<_MainPageContent> {
             onReparent: _reparent,
             onEdit: _onEditNode,
             onDescriptionChanged: _updateDescription,
+            onDetailsChanged: _updateDetails,
+            nodesBeingEdited: nodesBeingEdited,
+            allowMultipleEdits: allowMultipleEdits,
+            onToggleMultiEdit: _onToggleMultiEdit,
           ),
         ],
       ),
