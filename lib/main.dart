@@ -175,6 +175,7 @@ class __MainPageContentState extends State<_MainPageContent> {
             onPrune: _prune,
             onReparent: _reparent,
             onEdit: _onEditNode,
+            onDescriptionChanged: _updateDescription,
           ),
         ],
       ),

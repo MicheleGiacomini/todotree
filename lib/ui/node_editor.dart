@@ -1,7 +1,7 @@
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
+import 'package:todotree/ui/debounced_text_field.dart';
 import 'package:todotree/ui/node_view.dart';
-import 'package:todotree/utils/debouncer.dart';
 
 import '../domain/element.dart';
 
@@ -31,7 +31,6 @@ class _NodeEditorState extends State<NodeEditor> {
   late Node node;
   final descriptionController = TextEditingController();
   final detailsController = TextEditingController();
-  final debouncer = Debouncer();
 
   @override
   void initState() {
@@ -53,25 +52,20 @@ class _NodeEditorState extends State<NodeEditor> {
     return Column(
       children: [
         Text("Edit node", style: textTheme.headlineMedium),
-        TextField(
+        DebouncedTextField(
           decoration: InputDecoration(labelText: "Description"),
           controller: descriptionController,
           onChanged: (value) {
-            debouncer.run(
-              () => widget.onUpdateDescription(NodeDescription(content: value)),
-            );
+            widget.onUpdateDescription(NodeDescription(content: value));
           },
-          onTapOutside: (_) => debouncer.complete(),
         ),
-        TextField(
+        DebouncedTextField(
           minLines: 7,
           maxLines: null,
           decoration: InputDecoration(labelText: "Details"),
           controller: detailsController,
           onChanged: (value) {
-            debouncer.run(
-              () => widget.onUpdateDetails(NodeDetails(content: value)),
-            );
+            widget.onUpdateDetails(NodeDetails(content: value));
           },
         ),
       ],

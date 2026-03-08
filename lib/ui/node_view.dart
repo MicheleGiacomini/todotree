@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:todotree/domain/element.dart';
+import 'package:todotree/ui/debounced_text_field.dart';
 
 typedef NodeProvider = Node Function(NodeId);
 
@@ -12,6 +13,7 @@ class NodeList extends StatefulWidget {
   final void Function(NodeId) onPrune;
   final void Function(NodeId child, NodeId newParent) onReparent;
   final void Function(NodeId) onEdit;
+  final void Function(NodeId, NodeDescription) onDescriptionChanged;
 
   const NodeList({
     super.key,
@@ -21,6 +23,7 @@ class NodeList extends StatefulWidget {
     required this.onPrune,
     required this.onReparent,
     required this.onEdit,
+    required this.onDescriptionChanged,
   });
 
   @override
@@ -173,6 +176,9 @@ class _NodeListState extends State<NodeList> {
                       expanded:
                           item.node.children.isNotEmpty &&
                           (expandedNodes[id] ?? false),
+                      onDescriptionChanged: (p0) {
+                        widget.onDescriptionChanged(id, p0);
+                      },
                       onExpand: item.node.children.isEmpty
                           ? null
                           : () {
@@ -228,7 +234,7 @@ class _NodeListState extends State<NodeList> {
   }
 }
 
-class NodeView extends StatelessWidget {
+class NodeView extends StatefulWidget {
   final NodeId nodeId;
   final NodeProvider nodeProvider;
   final int level;
@@ -239,6 +245,7 @@ class NodeView extends StatelessWidget {
   final void Function() onCreateChild;
   final void Function() onPrune;
   final void Function() onEdit;
+  final void Function(NodeDescription) onDescriptionChanged;
   final Duration animationDuration;
 
   const NodeView({
@@ -253,33 +260,79 @@ class NodeView extends StatelessWidget {
     required this.onCreateChild,
     required this.onPrune,
     required this.onEdit,
+    required this.onDescriptionChanged,
     this.animationDuration = const Duration(milliseconds: 300),
   });
 
   @override
+  State<NodeView> createState() => _NodeViewState();
+}
+
+class _NodeViewState extends State<NodeView> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    final node = widget.nodeProvider(widget.nodeId);
+    _controller = TextEditingController(text: node.description.content);
+  }
+
+  @override
+  void didUpdateWidget(covariant NodeView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final node = widget.nodeProvider(widget.nodeId);
+    if (_controller.text != node.description.content) {
+      _controller.text = node.description.content;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final effectiveIconTurns = expanded ? 0.25 : 0.0;
-    final node = nodeProvider(nodeId);
+    final theme = Theme.of(context);
+    final effectiveIconTurns = widget.expanded ? 0.25 : 0.0;
     return Padding(
-      padding: EdgeInsets.only(left: level * levelPadding),
-      child: ListTile(
-        onTap: onExpand,
-        leading: AnimatedRotation(
-          turns: effectiveIconTurns,
-          duration: animationDuration,
-          child: onExpand == null
-              ? Icon(Icons.remove)
-              : Icon(Icons.chevron_right),
+      padding: EdgeInsets.only(left: widget.level * widget.levelPadding),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(color: theme.dividerColor, width: 1.0),
+          ),
         ),
-        title: Text(node.description.content),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ClickableIcon(icon: Icons.edit, onTap: onEdit),
-            ClickableIcon(icon: Icons.add_circle, onTap: onCreateChild),
-            ClickableIcon(icon: Icons.folder_open, onTap: onEnter),
-            ClickableIcon(icon: Icons.delete, onTap: onPrune),
-          ],
+        child: ListTile(
+          onTap: widget.onExpand,
+          leading: AnimatedRotation(
+            turns: effectiveIconTurns,
+            duration: widget.animationDuration,
+            child: widget.onExpand == null
+                ? Icon(Icons.remove)
+                : Icon(Icons.chevron_right),
+          ),
+          title: DebouncedTextField(
+            controller: _controller,
+            decoration: InputDecoration(border: InputBorder.none),
+            onChanged: (value) {
+              widget.onDescriptionChanged(NodeDescription(content: value));
+            },
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ClickableIcon(icon: Icons.edit, onTap: widget.onEdit),
+              ClickableIcon(
+                icon: Icons.add_circle,
+                onTap: widget.onCreateChild,
+              ),
+              ClickableIcon(icon: Icons.folder_open, onTap: widget.onEnter),
+              ClickableIcon(icon: Icons.delete, onTap: widget.onPrune),
+            ],
+          ),
         ),
       ),
     );
