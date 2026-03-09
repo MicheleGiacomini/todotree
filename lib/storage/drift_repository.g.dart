@@ -808,12 +808,223 @@ class NodeChildrenCompanion extends UpdateCompanion<NodeChildrenData> {
   }
 }
 
+class $TagColorsTable extends TagColors
+    with TableInfo<$TagColorsTable, TagColor> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TagColorsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _tagNameMeta = const VerificationMeta(
+    'tagName',
+  );
+  @override
+  late final GeneratedColumn<String> tagName = GeneratedColumn<String>(
+    'tag_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _colorMeta = const VerificationMeta('color');
+  @override
+  late final GeneratedColumn<int> color = GeneratedColumn<int>(
+    'color',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [tagName, color];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'tag_colors';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TagColor> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('tag_name')) {
+      context.handle(
+        _tagNameMeta,
+        tagName.isAcceptableOrUnknown(data['tag_name']!, _tagNameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_tagNameMeta);
+    }
+    if (data.containsKey('color')) {
+      context.handle(
+        _colorMeta,
+        color.isAcceptableOrUnknown(data['color']!, _colorMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_colorMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {tagName};
+  @override
+  TagColor map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TagColor(
+      tagName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tag_name'],
+      )!,
+      color: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}color'],
+      )!,
+    );
+  }
+
+  @override
+  $TagColorsTable createAlias(String alias) {
+    return $TagColorsTable(attachedDatabase, alias);
+  }
+}
+
+class TagColor extends DataClass implements Insertable<TagColor> {
+  final String tagName;
+  final int color;
+  const TagColor({required this.tagName, required this.color});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['tag_name'] = Variable<String>(tagName);
+    map['color'] = Variable<int>(color);
+    return map;
+  }
+
+  TagColorsCompanion toCompanion(bool nullToAbsent) {
+    return TagColorsCompanion(tagName: Value(tagName), color: Value(color));
+  }
+
+  factory TagColor.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TagColor(
+      tagName: serializer.fromJson<String>(json['tagName']),
+      color: serializer.fromJson<int>(json['color']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'tagName': serializer.toJson<String>(tagName),
+      'color': serializer.toJson<int>(color),
+    };
+  }
+
+  TagColor copyWith({String? tagName, int? color}) =>
+      TagColor(tagName: tagName ?? this.tagName, color: color ?? this.color);
+  TagColor copyWithCompanion(TagColorsCompanion data) {
+    return TagColor(
+      tagName: data.tagName.present ? data.tagName.value : this.tagName,
+      color: data.color.present ? data.color.value : this.color,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TagColor(')
+          ..write('tagName: $tagName, ')
+          ..write('color: $color')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(tagName, color);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TagColor &&
+          other.tagName == this.tagName &&
+          other.color == this.color);
+}
+
+class TagColorsCompanion extends UpdateCompanion<TagColor> {
+  final Value<String> tagName;
+  final Value<int> color;
+  final Value<int> rowid;
+  const TagColorsCompanion({
+    this.tagName = const Value.absent(),
+    this.color = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  TagColorsCompanion.insert({
+    required String tagName,
+    required int color,
+    this.rowid = const Value.absent(),
+  }) : tagName = Value(tagName),
+       color = Value(color);
+  static Insertable<TagColor> custom({
+    Expression<String>? tagName,
+    Expression<int>? color,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (tagName != null) 'tag_name': tagName,
+      if (color != null) 'color': color,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  TagColorsCompanion copyWith({
+    Value<String>? tagName,
+    Value<int>? color,
+    Value<int>? rowid,
+  }) {
+    return TagColorsCompanion(
+      tagName: tagName ?? this.tagName,
+      color: color ?? this.color,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (tagName.present) {
+      map['tag_name'] = Variable<String>(tagName.value);
+    }
+    if (color.present) {
+      map['color'] = Variable<int>(color.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TagColorsCompanion(')
+          ..write('tagName: $tagName, ')
+          ..write('color: $color, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $NodesTable nodes = $NodesTable(this);
   late final $NodeTagsTable nodeTags = $NodeTagsTable(this);
   late final $NodeChildrenTable nodeChildren = $NodeChildrenTable(this);
+  late final $TagColorsTable tagColors = $TagColorsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -822,6 +1033,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     nodes,
     nodeTags,
     nodeChildren,
+    tagColors,
   ];
 }
 
@@ -1728,6 +1940,143 @@ typedef $$NodeChildrenTableProcessedTableManager =
       NodeChildrenData,
       PrefetchHooks Function({bool parentId, bool childId})
     >;
+typedef $$TagColorsTableCreateCompanionBuilder =
+    TagColorsCompanion Function({
+      required String tagName,
+      required int color,
+      Value<int> rowid,
+    });
+typedef $$TagColorsTableUpdateCompanionBuilder =
+    TagColorsCompanion Function({
+      Value<String> tagName,
+      Value<int> color,
+      Value<int> rowid,
+    });
+
+class $$TagColorsTableFilterComposer
+    extends Composer<_$AppDatabase, $TagColorsTable> {
+  $$TagColorsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get tagName => $composableBuilder(
+    column: $table.tagName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get color => $composableBuilder(
+    column: $table.color,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$TagColorsTableOrderingComposer
+    extends Composer<_$AppDatabase, $TagColorsTable> {
+  $$TagColorsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get tagName => $composableBuilder(
+    column: $table.tagName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get color => $composableBuilder(
+    column: $table.color,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$TagColorsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TagColorsTable> {
+  $$TagColorsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get tagName =>
+      $composableBuilder(column: $table.tagName, builder: (column) => column);
+
+  GeneratedColumn<int> get color =>
+      $composableBuilder(column: $table.color, builder: (column) => column);
+}
+
+class $$TagColorsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TagColorsTable,
+          TagColor,
+          $$TagColorsTableFilterComposer,
+          $$TagColorsTableOrderingComposer,
+          $$TagColorsTableAnnotationComposer,
+          $$TagColorsTableCreateCompanionBuilder,
+          $$TagColorsTableUpdateCompanionBuilder,
+          (TagColor, BaseReferences<_$AppDatabase, $TagColorsTable, TagColor>),
+          TagColor,
+          PrefetchHooks Function()
+        > {
+  $$TagColorsTableTableManager(_$AppDatabase db, $TagColorsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TagColorsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TagColorsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TagColorsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> tagName = const Value.absent(),
+                Value<int> color = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TagColorsCompanion(
+                tagName: tagName,
+                color: color,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String tagName,
+                required int color,
+                Value<int> rowid = const Value.absent(),
+              }) => TagColorsCompanion.insert(
+                tagName: tagName,
+                color: color,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$TagColorsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TagColorsTable,
+      TagColor,
+      $$TagColorsTableFilterComposer,
+      $$TagColorsTableOrderingComposer,
+      $$TagColorsTableAnnotationComposer,
+      $$TagColorsTableCreateCompanionBuilder,
+      $$TagColorsTableUpdateCompanionBuilder,
+      (TagColor, BaseReferences<_$AppDatabase, $TagColorsTable, TagColor>),
+      TagColor,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -1738,4 +2087,6 @@ class $AppDatabaseManager {
       $$NodeTagsTableTableManager(_db, _db.nodeTags);
   $$NodeChildrenTableTableManager get nodeChildren =>
       $$NodeChildrenTableTableManager(_db, _db.nodeChildren);
+  $$TagColorsTableTableManager get tagColors =>
+      $$TagColorsTableTableManager(_db, _db.tagColors);
 }

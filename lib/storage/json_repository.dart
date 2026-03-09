@@ -9,7 +9,7 @@ import 'package:todotree/storage/map_repository.dart';
 class JsonRepository extends BaseMapRepository {
   final File _file;
 
-  JsonRepository._(super.nodes, this._file);
+  JsonRepository._(super.nodes, super.tagColors, this._file);
 
   static Future<JsonRepository> init({String fileName = 'todotree.json'}) async {
     final directory = await getApplicationDocumentsDirectory();
@@ -19,14 +19,20 @@ class JsonRepository extends BaseMapRepository {
       try {
         final content = await file.readAsString();
         final Map<String, dynamic> json = jsonDecode(content);
-        final nodes = json.map((key, value) {
+        
+        final nodesJson = json['nodes'] as Map<String, dynamic>;
+        final tagColorsJson = json['tagColors'] as Map<String, dynamic>;
+
+        final nodes = nodesJson.map((key, value) {
           final id = NodeId.fromString(key);
           return MapEntry(id, StorageNode.fromJson(value as Map<String, dynamic>));
         });
-        return JsonRepository._(nodes, file);
+
+        final tagColors = tagColorsJson.map((key, value) => MapEntry(key, value as int));
+
+        return JsonRepository._(nodes, tagColors, file);
       } catch (e) {
-        // Fallback if file is corrupted
-        print('Error loading JSON repository: $e');
+        // Fallback if file is corrupted or old format
       }
     }
 
@@ -41,14 +47,24 @@ class JsonRepository extends BaseMapRepository {
         children: const IList.empty(),
       ),
     };
-    final repo = JsonRepository._(initialNodes, file);
+    final repo = JsonRepository._(initialNodes, {}, file);
     await repo._save();
     return repo;
   }
 
   Future<void> _save() async {
-    final jsonMap = nodes.map((key, value) => MapEntry(key.toJson().toString(), value.toJson()));
+    final nodesMap = nodes.map((key, value) => MapEntry(key.toJson().toString(), value.toJson()));
+    final jsonMap = {
+      'nodes': nodesMap,
+      'tagColors': tagColors,
+    };
     await _file.writeAsString(jsonEncode(jsonMap));
+  }
+
+  @override
+  Future<void> setTagColor(String tagName, int color) async {
+    await super.setTagColor(tagName, color);
+    await _save();
   }
 
   @override

@@ -11,6 +11,14 @@ import 'package:todotree/storage/element_repository.dart';
 
 part 'drift_repository.g.dart';
 
+class TagColors extends Table {
+  TextColumn get tagName => text()();
+  IntColumn get color => integer()();
+
+  @override
+  Set<Column> get primaryKey => {tagName};
+}
+
 @DataClassName('DbNode')
 class Nodes extends Table {
   TextColumn get id => text()();
@@ -39,7 +47,7 @@ class NodeChildren extends Table {
   Set<Column> get primaryKey => {parentId, childId};
 }
 
-@DriftDatabase(tables: [Nodes, NodeTags, NodeChildren])
+@DriftDatabase(tables: [Nodes, NodeTags, NodeChildren, TagColors])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
@@ -163,6 +171,19 @@ class DriftRepository implements ElementRepository {
       result[node.id] = node;
     }
     return result;
+  }
+
+  @override
+  Future<Map<String, int>> getTagColors() async {
+    final allColors = await db.select(db.tagColors).get();
+    return {for (final c in allColors) c.tagName: c.color};
+  }
+
+  @override
+  Future<void> setTagColor(String tagName, int color) async {
+    await db.into(db.tagColors).insertOnConflictUpdate(
+      TagColorsCompanion.insert(tagName: tagName, color: color),
+    );
   }
 
   @override

@@ -71,6 +71,7 @@ class _MyHomePageState extends State<MyHomePage> {
             repository.getElements(),
             repository.getRootId(),
             repository.getTags(),
+            repository.getTagColors(),
           ]),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
@@ -88,12 +89,14 @@ class _MyHomePageState extends State<MyHomePage> {
               final elements = data[0] as Map<NodeId, Node>;
               final rootId = data[1] as NodeId;
               final tags = data[2] as ISet<Tag>;
+              final tagColors = data[3] as Map<String, int>;
 
               return _MainPageContent(
                 repository: repository,
                 initialNodes: elements,
                 rootNode: rootId,
                 initialTagList: tags.toSet(),
+                initialTagColors: tagColors,
               );
             }
           },
@@ -108,12 +111,14 @@ class _MainPageContent extends StatefulWidget {
   final Map<NodeId, Node> initialNodes;
   final NodeId rootNode;
   final Set<Tag> initialTagList;
+  final Map<String, int> initialTagColors;
 
   const _MainPageContent({
     required this.repository,
     required this.initialNodes,
     required this.rootNode,
     required this.initialTagList,
+    required this.initialTagColors,
   });
 
   @override
@@ -126,11 +131,13 @@ class __MainPageContentState extends State<_MainPageContent> {
   bool allowMultipleEdits = false;
   static final _scaffoldKey = GlobalKey<ScaffoldState>();
   late Set<Tag> tags;
+  late Map<String, int> tagColors;
 
   @override
   void initState() {
     nodes = {...widget.initialNodes};
     tags = {...widget.initialTagList};
+    tagColors = {...widget.initialTagColors};
     super.initState();
   }
 
@@ -189,6 +196,13 @@ class __MainPageContentState extends State<_MainPageContent> {
     });
   }
 
+  Future<void> _setTagColor(String tagName, int color) async {
+    await widget.repository.setTagColor(tagName, color);
+    setState(() {
+      tagColors[tagName] = color;
+    });
+  }
+
   void _onEditNode(NodeId id) {
     setState(() {
       if (nodesBeingEdited.contains(id)) {
@@ -230,7 +244,9 @@ class __MainPageContentState extends State<_MainPageContent> {
             onDetailsChanged: _updateDetails,
             onAddTag: _addTag,
             onRemoveTag: _removeTag,
+            onSetTagColor: _setTagColor,
             allTags: tags,
+            tagColors: tagColors,
             nodesBeingEdited: nodesBeingEdited,
             allowMultipleEdits: allowMultipleEdits,
             onToggleMultiEdit: _onToggleMultiEdit,

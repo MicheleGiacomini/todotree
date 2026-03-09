@@ -14,5 +14,5 @@ class InMemoryRepository extends BaseMapRepository {
           tags: const ISet.empty(),
           children: const IList.empty(),
         ),
-      });
+      }, {});
 }

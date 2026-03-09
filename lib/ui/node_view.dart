@@ -3,6 +3,7 @@ import 'package:todotree/domain/element.dart';
 import 'package:todotree/ui/clickable_icon.dart';
 import 'package:todotree/ui/debounced_text_field.dart';
 import 'package:todotree/ui/tag_editor.dart';
+import 'package:todotree/ui/palette.dart';
 
 typedef NodeProvider = Node Function(NodeId);
 
@@ -17,7 +18,9 @@ class NodeList extends StatefulWidget {
   final void Function(NodeId, NodeDetails) onDetailsChanged;
   final void Function(NodeId, Tag) onAddTag;
   final void Function(NodeId, Tag) onRemoveTag;
+  final void Function(String, int) onSetTagColor;
   final Set<Tag> allTags;
+  final Map<String, int> tagColors;
   final Set<NodeId> nodesBeingEdited;
   final bool allowMultipleEdits;
   final void Function() onToggleMultiEdit;
@@ -34,7 +37,9 @@ class NodeList extends StatefulWidget {
     required this.onDetailsChanged,
     required this.onAddTag,
     required this.onRemoveTag,
+    required this.onSetTagColor,
     required this.allTags,
+    required this.tagColors,
     required this.nodesBeingEdited,
     required this.allowMultipleEdits,
     required this.onToggleMultiEdit,
@@ -209,7 +214,9 @@ class _NodeListState extends State<NodeList> {
                       onRemoveTag: (p0) {
                         widget.onRemoveTag(id, p0);
                       },
+                      onSetTagColor: widget.onSetTagColor,
                       allTags: widget.allTags,
+                      tagColors: widget.tagColors,
                       onExpand: item.node.children.isEmpty
                           ? null
                           : () {
@@ -281,7 +288,9 @@ class NodeView extends StatefulWidget {
   final void Function(NodeDetails) onDetailsChanged;
   final void Function(Tag) onAddTag;
   final void Function(Tag) onRemoveTag;
+  final void Function(String, int) onSetTagColor;
   final Set<Tag> allTags;
+  final Map<String, int> tagColors;
   final Duration animationDuration;
 
   const NodeView({
@@ -301,7 +310,9 @@ class NodeView extends StatefulWidget {
     required this.onDetailsChanged,
     required this.onAddTag,
     required this.onRemoveTag,
+    required this.onSetTagColor,
     required this.allTags,
+    required this.tagColors,
     this.animationDuration = const Duration(milliseconds: 300),
   });
 
@@ -367,12 +378,47 @@ class _NodeViewState extends State<NodeView> {
                     ? Icon(Icons.remove)
                     : Icon(Icons.chevron_right),
               ),
-              title: DebouncedTextField(
-                controller: _descriptionController,
-                decoration: InputDecoration(border: InputBorder.none),
-                onChanged: (value) {
-                  widget.onDescriptionChanged(NodeDescription(content: value));
-                },
+              title: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  DebouncedTextField(
+                    controller: _descriptionController,
+                    decoration: InputDecoration(border: InputBorder.none),
+                    onChanged: (value) {
+                      widget.onDescriptionChanged(NodeDescription(content: value));
+                    },
+                  ),
+                  if (node.tags.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8.0),
+                      child: Wrap(
+                        spacing: 4.0,
+                        runSpacing: 2.0,
+                        children: node.tags.map((tag) {
+                          final color = TagPalette.getColor(widget.tagColors[tag.name]);
+                          return Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6.0,
+                              vertical: 2.0,
+                            ),
+                            decoration: BoxDecoration(
+                              color: color,
+                              borderRadius: BorderRadius.circular(4.0),
+                            ),
+                            child: Text(
+                              tag.name,
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: TagPalette.getContrastColor(color),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                ],
               ),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -416,8 +462,10 @@ class _NodeViewState extends State<NodeView> {
                     TagEditor(
                       currentTags: node.tags,
                       allTags: widget.allTags,
+                      tagColors: widget.tagColors,
                       onAddTag: widget.onAddTag,
                       onRemoveTag: widget.onRemoveTag,
+                      onSetTagColor: widget.onSetTagColor,
                     ),
                   ],
                 ),

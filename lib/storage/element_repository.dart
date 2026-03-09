@@ -48,11 +48,13 @@ sealed class Operation with _$Operation {
 abstract interface class ElementRepository {
   Future<Map<NodeId, Node>> getElements();
   Future<ISet<Tag>> getTags();
+  Future<Map<String, int>> getTagColors();
   Future<NodeId> getRootId();
   Future<Node> updateDesription(NodeId id, NodeDescription newDescription);
   Future<Node> updateDetails(NodeId id, NodeDetails newDetails);
   Future<Node> addTag(NodeId id, Tag tag);
   Future<Node> removeTag(NodeId id, Tag tag);
+  Future<void> setTagColor(String tagName, int color);
   Future<Map<NodeId, Node>> pruneNode(NodeId id);
   Future<({Node updatedParent, Node newChild})> createNewAt(NodeId id);
 
