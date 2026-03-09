@@ -174,6 +174,21 @@ class __MainPageContentState extends State<_MainPageContent> {
     setState(() {});
   }
 
+  Future<void> _addTag(NodeId id, Tag tag) async {
+    final result = await widget.repository.addTag(id, tag);
+    setState(() {
+      nodes[result.id] = result;
+      tags.add(tag);
+    });
+  }
+
+  Future<void> _removeTag(NodeId id, Tag tag) async {
+    final result = await widget.repository.removeTag(id, tag);
+    setState(() {
+      nodes[result.id] = result;
+    });
+  }
+
   void _onEditNode(NodeId id) {
     setState(() {
       if (nodesBeingEdited.contains(id)) {
@@ -213,6 +228,9 @@ class __MainPageContentState extends State<_MainPageContent> {
             onEdit: _onEditNode,
             onDescriptionChanged: _updateDescription,
             onDetailsChanged: _updateDetails,
+            onAddTag: _addTag,
+            onRemoveTag: _removeTag,
+            allTags: tags,
             nodesBeingEdited: nodesBeingEdited,
             allowMultipleEdits: allowMultipleEdits,
             onToggleMultiEdit: _onToggleMultiEdit,

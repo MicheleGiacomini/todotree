@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:todotree/domain/element.dart';
 import 'package:todotree/ui/clickable_icon.dart';
 import 'package:todotree/ui/debounced_text_field.dart';
+import 'package:todotree/ui/tag_editor.dart';
 
 typedef NodeProvider = Node Function(NodeId);
 
@@ -14,6 +15,9 @@ class NodeList extends StatefulWidget {
   final void Function(NodeId) onEdit;
   final void Function(NodeId, NodeDescription) onDescriptionChanged;
   final void Function(NodeId, NodeDetails) onDetailsChanged;
+  final void Function(NodeId, Tag) onAddTag;
+  final void Function(NodeId, Tag) onRemoveTag;
+  final Set<Tag> allTags;
   final Set<NodeId> nodesBeingEdited;
   final bool allowMultipleEdits;
   final void Function() onToggleMultiEdit;
@@ -28,6 +32,9 @@ class NodeList extends StatefulWidget {
     required this.onEdit,
     required this.onDescriptionChanged,
     required this.onDetailsChanged,
+    required this.onAddTag,
+    required this.onRemoveTag,
+    required this.allTags,
     required this.nodesBeingEdited,
     required this.allowMultipleEdits,
     required this.onToggleMultiEdit,
@@ -196,6 +203,13 @@ class _NodeListState extends State<NodeList> {
                       onDetailsChanged: (p0) {
                         widget.onDetailsChanged(id, p0);
                       },
+                      onAddTag: (p0) {
+                        widget.onAddTag(id, p0);
+                      },
+                      onRemoveTag: (p0) {
+                        widget.onRemoveTag(id, p0);
+                      },
+                      allTags: widget.allTags,
                       onExpand: item.node.children.isEmpty
                           ? null
                           : () {
@@ -265,6 +279,9 @@ class NodeView extends StatefulWidget {
   final void Function() onEdit;
   final void Function(NodeDescription) onDescriptionChanged;
   final void Function(NodeDetails) onDetailsChanged;
+  final void Function(Tag) onAddTag;
+  final void Function(Tag) onRemoveTag;
+  final Set<Tag> allTags;
   final Duration animationDuration;
 
   const NodeView({
@@ -282,6 +299,9 @@ class NodeView extends StatefulWidget {
     required this.onEdit,
     required this.onDescriptionChanged,
     required this.onDetailsChanged,
+    required this.onAddTag,
+    required this.onRemoveTag,
+    required this.allTags,
     this.animationDuration = const Duration(milliseconds: 300),
   });
 
@@ -324,6 +344,7 @@ class _NodeViewState extends State<NodeView> {
 
   @override
   Widget build(BuildContext context) {
+    final node = widget.nodeProvider(widget.nodeId);
     final theme = Theme.of(context);
     final effectiveIconTurns = widget.expanded ? 0.25 : 0.0;
     return Padding(
@@ -392,18 +413,11 @@ class _NodeViewState extends State<NodeView> {
                       },
                     ),
                     const SizedBox(height: 8.0),
-                    // Placeholder for Tags
-                    Wrap(
-                      spacing: 8.0,
-                      children: [
-                        ActionChip(
-                          avatar: Icon(Icons.add, size: 16),
-                          label: Text("Add Tag"),
-                          onPressed: () {
-                            // TODO: Implement tag addition
-                          },
-                        ),
-                      ],
+                    TagEditor(
+                      currentTags: node.tags,
+                      allTags: widget.allTags,
+                      onAddTag: widget.onAddTag,
+                      onRemoveTag: widget.onRemoveTag,
                     ),
                   ],
                 ),
