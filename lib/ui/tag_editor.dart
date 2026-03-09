@@ -46,34 +46,12 @@ class _TagEditorState extends State<TagEditor> {
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: Text("Choose color for ${tag.name}"),
-          content: Wrap(
-            spacing: 8.0,
-            runSpacing: 8.0,
-            children: TagPalette.colors.map((color) {
-              return GestureDetector(
-                onTap: () {
-                  widget.onSetTagColor(tag.name, color.toARGB32());
-                  Navigator.of(context).pop();
-                },
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: color,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: widget.tagColors[tag.name] == color.toARGB32()
-                          ? Colors.black
-                          : Colors.transparent,
-                      width: 2,
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
+        return _ExcalidrawColorPicker(
+          tagName: tag.name,
+          initialColor: TagPalette.getColor(widget.tagColors[tag.name]),
+          onColorChanged: (color) {
+            widget.onSetTagColor(tag.name, color.toARGB32());
+          },
         );
       },
     );
@@ -174,6 +152,187 @@ class _TagEditorState extends State<TagEditor> {
           },
         ),
       ],
+    );
+  }
+}
+
+class _ExcalidrawColorPicker extends StatefulWidget {
+  final String tagName;
+  final Color initialColor;
+  final void Function(Color) onColorChanged;
+
+  const _ExcalidrawColorPicker({
+    required this.tagName,
+    required this.initialColor,
+    required this.onColorChanged,
+  });
+
+  @override
+  State<_ExcalidrawColorPicker> createState() => _ExcalidrawColorPickerState();
+}
+
+class _ExcalidrawColorPickerState extends State<_ExcalidrawColorPicker> {
+  late Color _currentColor;
+  late Color _currentBase;
+  late TextEditingController _hexController;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentColor = widget.initialColor;
+    _currentBase = _findBase(_currentColor);
+    _hexController = TextEditingController(
+      text: _currentColor.toARGB32().toRadixString(16).padLeft(8, '0').substring(2),
+    );
+  }
+
+  Color _findBase(Color color) {
+    for (final base in TagPalette.baseColors) {
+      if (base.toARGB32() == color.toARGB32()) return base;
+      final shades = TagPalette.getShades(base);
+      if (shades != null && shades.any((s) => s.toARGB32() == color.toARGB32())) {
+        return base;
+      }
+    }
+    return TagPalette.baseColors[1];
+  }
+
+  void _updateColor(Color color, {bool updateBase = true}) {
+    setState(() {
+      _currentColor = color;
+      if (updateBase) {
+        _currentBase = _findBase(color);
+      }
+      _hexController.text =
+          _currentColor.toARGB32().toRadixString(16).padLeft(8, '0').substring(2);
+    });
+    widget.onColorChanged(color);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final shades = TagPalette.getShades(_currentBase);
+
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        width: 300,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Colors",
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.grey[700]),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: TagPalette.baseColors.map((color) {
+                final isSelected = _currentBase.toARGB32() == color.toARGB32();
+                return GestureDetector(
+                  onTap: () => _updateColor(color),
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: color,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: isSelected ? Colors.indigo : Colors.grey[300]!,
+                        width: isSelected ? 2 : 1,
+                      ),
+                      boxShadow: isSelected
+                          ? [BoxShadow(color: Colors.indigo.withValues(alpha: 0.2), blurRadius: 4)]
+                          : null,
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              "Shades",
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.grey[700]),
+            ),
+            const SizedBox(height: 12),
+            if (shades != null)
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: shades.map((color) {
+                  final isSelected = _currentColor.toARGB32() == color.toARGB32();
+                  return GestureDetector(
+                    onTap: () => _updateColor(color, updateBase: false),
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: color,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: isSelected ? Colors.indigo : Colors.grey[300]!,
+                          width: isSelected ? 2 : 1,
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              )
+            else
+              Text(
+                "No shades available for this color",
+                style: TextStyle(fontSize: 12, color: Colors.grey[500], fontStyle: FontStyle.italic),
+              ),
+            const SizedBox(height: 20),
+            Text(
+              "Hex code",
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.grey[700]),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey[200]!),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Row(
+                children: [
+                  Text("#", style: TextStyle(color: Colors.grey[400], fontSize: 16)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      controller: _hexController,
+                      decoration: const InputDecoration(
+                        border: InputBorder.none,
+                        isDense: true,
+                        contentPadding: EdgeInsets.symmetric(vertical: 10),
+                      ),
+                      style: const TextStyle(fontFamily: 'monospace', fontSize: 14),
+                      onSubmitted: (value) {
+                        final color = Color(int.parse("FF$value", radix: 16));
+                        _updateColor(color);
+                      },
+                    ),
+                  ),
+                  Icon(Icons.edit_outlined, size: 18, color: Colors.grey[400]),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text("Done"),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
