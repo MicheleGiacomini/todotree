@@ -120,6 +120,16 @@ class _NodeListState extends State<NodeList> {
     expandedNodes[id] = true;
   }
 
+  bool _areAllChildrenDone(NodeId id) {
+    final node = _nodeProvider(id);
+    for (final childId in node.children) {
+      final child = _nodeProvider(childId);
+      if (!child.done) return false;
+      if (!_areAllChildrenDone(childId)) return false;
+    }
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
     final nodes = _buildChildren(currentBase, 0);
@@ -231,6 +241,7 @@ class _NodeListState extends State<NodeList> {
                       onSetTagColor: widget.onSetTagColor,
                       allTags: widget.allTags,
                       tagColors: widget.tagColors,
+                      allChildrenDone: _areAllChildrenDone(id),
                       onExpand: item.node.children.isEmpty
                           ? null
                           : () {
@@ -306,6 +317,7 @@ class NodeView extends StatefulWidget {
   final void Function(String, int) onSetTagColor;
   final Set<Tag> allTags;
   final Map<String, int> tagColors;
+  final bool allChildrenDone;
   final Duration animationDuration;
 
   const NodeView({
@@ -329,6 +341,7 @@ class NodeView extends StatefulWidget {
     required this.onSetTagColor,
     required this.allTags,
     required this.tagColors,
+    required this.allChildrenDone,
     this.animationDuration = const Duration(milliseconds: 300),
   });
 
@@ -376,6 +389,8 @@ class _NodeViewState extends State<NodeView> {
     final effectiveIconTurns = widget.expanded ? 0.25 : 0.0;
     final opacity = node.done ? 0.5 : 1.0;
 
+    final canBeMarkedDone = node.done || widget.allChildrenDone;
+
     return Padding(
       padding: EdgeInsets.only(left: widget.level * widget.levelPadding),
       child: Opacity(
@@ -404,11 +419,14 @@ class _NodeViewState extends State<NodeView> {
                     ),
                     Checkbox(
                       value: node.done,
-                      onChanged: (value) {
-                        if (value != null) {
-                          widget.onDoneChanged(value);
-                        }
-                      },
+                      onChanged:
+                          canBeMarkedDone
+                              ? (value) {
+                                if (value != null) {
+                                  widget.onDoneChanged(value);
+                                }
+                              }
+                              : null,
                     ),
                   ],
                 ),

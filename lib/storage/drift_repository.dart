@@ -379,15 +379,67 @@ class DriftRepository implements ElementRepository {
     return _buildNode(dbNode);
   }
 
+  Future<bool> _areAllChildrenDone(String idStr) async {
+    final children = await (db.select(
+      db.nodes,
+    )..where((t) => t.parentId.equals(idStr))).get();
+    for (final child in children) {
+      if (!child.done) return false;
+      if (!await _areAllChildrenDone(child.id)) return false;
+    }
+    return true;
+  }
+
   @override
-  Future<Node> updateDone(NodeId id, bool done) async {
+  Future<Map<NodeId, Node>> updateDone(NodeId id, bool done) async {
     final idStr = id.toJson().toString();
-    await (db.update(db.nodes)..where((t) => t.id.equals(idStr))).write(
-      NodesCompanion(done: Value(done)),
-    );
-    final dbNode = await (db.select(
+    final Map<NodeId, Node> updatedNodes = {};
+
+    final currentNode = await (db.select(
       db.nodes,
     )..where((t) => t.id.equals(idStr))).getSingle();
-    return _buildNode(dbNode);
+
+    if (currentNode.done == done) return {};
+
+    await db.transaction(() async {
+      if (done) {
+        if (!await _areAllChildrenDone(idStr)) {
+          throw Exception("Cannot mark as done: some children are still to do.");
+        }
+        await (db.update(db.nodes)..where((t) => t.id.equals(idStr))).write(
+          const NodesCompanion(done: Value(true)),
+        );
+        updatedNodes[id] = await _buildNode(
+          currentNode.copyWith(done: true),
+        );
+      } else {
+        // Mark as todo
+        await (db.update(db.nodes)..where((t) => t.id.equals(idStr))).write(
+          const NodesCompanion(done: Value(false)),
+        );
+        var updatedCurrent = currentNode.copyWith(done: false);
+        updatedNodes[id] = await _buildNode(updatedCurrent);
+
+        // Recursively unmark parents
+        var parentId = updatedCurrent.parentId;
+        while (parentId != null) {
+          final parent = await (db.select(
+            db.nodes,
+          )..where((t) => t.id.equals(parentId!))).getSingleOrNull();
+          if (parent == null || !parent.done) break;
+
+          await (db.update(db.nodes)..where((t) => t.id.equals(parentId!))).write(
+            const NodesCompanion(done: Value(false)),
+          );
+          final updatedParent = parent.copyWith(done: false);
+          updatedNodes[NodeId.fromString(parentId)] = await _buildNode(
+            updatedParent,
+          );
+          parentId = updatedParent.parentId;
+        }
+      }
+    });
+
+    return updatedNodes;
   }
 }

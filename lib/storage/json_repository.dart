@@ -134,7 +134,7 @@ class JsonRepository extends BaseMapRepository {
   }
 
   @override
-  Future<Node> updateDone(NodeId id, bool done) async {
+  Future<Map<NodeId, Node>> updateDone(NodeId id, bool done) async {
     final result = await super.updateDone(id, done);
     await _save();
     return result;

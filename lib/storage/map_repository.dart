@@ -220,11 +220,49 @@ abstract class BaseMapRepository implements ElementRepository {
     return _buildNode(updatedNode);
   }
 
+  bool _areAllChildrenDone(NodeId id) {
+    final node = nodes[id]!;
+    for (final childId in node.children) {
+      final child = nodes[childId]!;
+      if (!child.done) return false;
+      if (!_areAllChildrenDone(childId)) return false;
+    }
+    return true;
+  }
+
   @override
-  Future<Node> updateDone(NodeId id, bool done) async {
+  Future<Map<NodeId, Node>> updateDone(NodeId id, bool done) async {
     final currentNode = nodes[id]!;
-    final updatedNode = currentNode.copyWith(done: done);
-    nodes[id] = updatedNode;
-    return _buildNode(updatedNode);
+    if (currentNode.done == done) return {};
+
+    final Map<NodeId, Node> updatedNodes = {};
+
+    if (done) {
+      if (!_areAllChildrenDone(id)) {
+        throw Exception("Cannot mark as done: some children are still to do.");
+      }
+      final updatedNode = currentNode.copyWith(done: true);
+      nodes[id] = updatedNode;
+      updatedNodes[id] = _buildNode(updatedNode);
+    } else {
+      // Mark as todo
+      final updatedNode = currentNode.copyWith(done: false);
+      nodes[id] = updatedNode;
+      updatedNodes[id] = _buildNode(updatedNode);
+
+      // Recursively unmark parents
+      var parentId = updatedNode.parentId;
+      while (parentId != null && nodes.containsKey(parentId)) {
+        final parent = nodes[parentId]!;
+        if (!parent.done) break;
+
+        final updatedParent = parent.copyWith(done: false);
+        nodes[parentId] = updatedParent;
+        updatedNodes[parentId] = _buildNode(updatedParent);
+        parentId = updatedParent.parentId;
+      }
+    }
+
+    return updatedNodes;
   }
 }

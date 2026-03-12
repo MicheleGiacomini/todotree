@@ -184,7 +184,7 @@ class __MainPageContentState extends State<_MainPageContent> {
 
   Future<void> _updateDone(NodeId id, bool done) async {
     final result = await widget.repository.updateDone(id, done);
-    nodes[result.id] = result;
+    nodes.addAll(result);
     setState(() {});
   }
 
