@@ -7,10 +7,10 @@ import 'package:todotree/ui/palette.dart';
 class TagEditor extends StatefulWidget {
   final IList<Tag> currentTags;
   final Set<Tag> allTags;
-  final Map<String, int> tagColors;
+  final Map<String, String> tagColors;
   final void Function(Tag) onAddTag;
   final void Function(Tag) onRemoveTag;
-  final void Function(String, int) onSetTagColor;
+  final void Function(String, String) onSetTagColor;
 
   const TagEditor({
     super.key,
@@ -43,14 +43,18 @@ class _TagEditorState extends State<TagEditor> {
   }
 
   void _showColorPicker(Tag tag) {
+    final tagColorStr = widget.tagColors[tag.name];
+    final tagColor = tagColorStr != null
+        ? TagColor.fromStorageString(tagColorStr)
+        : const TagColor(SemanticColor.blue);
     showDialog(
       context: context,
       builder: (context) {
         return _ExcalidrawColorPicker(
           tagName: tag.name,
-          initialColor: TagPalette.getColor(widget.tagColors[tag.name]),
+          initialColor: tagColor,
           onColorChanged: (color) {
-            widget.onSetTagColor(tag.name, color.toARGB32());
+            widget.onSetTagColor(tag.name, color.toStorageString());
           },
         );
       },
@@ -96,19 +100,19 @@ class _TagEditorState extends State<TagEditor> {
           },
           fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
             final theme = Theme.of(context);
-            final cp = theme.catppuccin;
+            final cp = theme.palette;
             return TextField(
               controller: controller,
               focusNode: focusNode,
-              style: TextStyle(fontSize: 14, color: cp.text),
+              style: TextStyle(fontSize: 14, color: cp.foreground),
               decoration: InputDecoration(
                 hintText: 'Add Tag',
-                hintStyle: TextStyle(color: cp.overlay0),
+                hintStyle: TextStyle(color: cp.brightBlack),
                 enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: cp.surface1),
+                  borderSide: BorderSide(color: cp.black),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: cp.mauve),
+                  borderSide: BorderSide(color: cp.magenta),
                 ),
                 isDense: true,
                 contentPadding: const EdgeInsets.symmetric(
@@ -134,10 +138,20 @@ class _TagEditorState extends State<TagEditor> {
                                   alignment: WrapAlignment.end,
                                   children:
                                       widget.currentTags.map((tag) {
-                                        final colorValue =
+                                        final tagColorStr =
                                             widget.tagColors[tag.name];
+                                        final tagColor = tagColorStr != null
+                                            ? TagColor.fromStorageString(
+                                              tagColorStr,
+                                            )
+                                            : const TagColor(
+                                              SemanticColor.blue,
+                                            );
                                         final backgroundColor =
-                                            TagPalette.getColor(colorValue);
+                                            TagPalette.resolveColor(
+                                              context,
+                                              tagColor,
+                                            );
                                         final contrastColor =
                                             TagPalette.getContrastColor(
                                               backgroundColor,
@@ -230,8 +244,8 @@ class _TagEditorState extends State<TagEditor> {
 
 class _ExcalidrawColorPicker extends StatefulWidget {
   final String tagName;
-  final Color initialColor;
-  final void Function(Color) onColorChanged;
+  final TagColor initialColor;
+  final void Function(TagColor) onColorChanged;
 
   const _ExcalidrawColorPicker({
     required this.tagName,
@@ -244,51 +258,37 @@ class _ExcalidrawColorPicker extends StatefulWidget {
 }
 
 class _ExcalidrawColorPickerState extends State<_ExcalidrawColorPicker> {
-  late Color _currentColor;
-  late Color _currentBase;
-  late TextEditingController _hexController;
+  late SemanticColor _currentColor;
+  late int _currentShade;
 
   @override
   void initState() {
     super.initState();
-    _currentColor = widget.initialColor;
-    _currentBase = _findBase(_currentColor);
-    _hexController = TextEditingController(
-      text: _currentColor.toARGB32().toRadixString(16).padLeft(8, '0').substring(2),
-    );
+    _currentColor = widget.initialColor.color;
+    _currentShade = widget.initialColor.shade;
   }
 
-  Color _findBase(Color color) {
-    for (final base in TagPalette.baseColors) {
-      if (base.toARGB32() == color.toARGB32()) return base;
-      final shades = TagPalette.getShades(base);
-      if (shades != null && shades.any((s) => s.toARGB32() == color.toARGB32())) {
-        return base;
-      }
-    }
-    return TagPalette.baseColors[1];
-  }
-
-  void _updateColor(Color color, {bool updateBase = true}) {
+  void _updateColor(SemanticColor color) {
     setState(() {
       _currentColor = color;
-      if (updateBase) {
-        _currentBase = _findBase(color);
-      }
-      _hexController.text =
-          _currentColor.toARGB32().toRadixString(16).padLeft(8, '0').substring(2);
     });
-    widget.onColorChanged(color);
+    widget.onColorChanged(TagColor(_currentColor, _currentShade));
+  }
+
+  void _updateShade(int shade) {
+    setState(() {
+      _currentShade = shade;
+    });
+    widget.onColorChanged(TagColor(_currentColor, _currentShade));
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final cp = theme.catppuccin;
-    final shades = TagPalette.getShades(_currentBase);
+    final palette = theme.palette;
 
     return Dialog(
-      backgroundColor: cp.base,
+      backgroundColor: palette.background,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: Container(
         padding: const EdgeInsets.all(16),
@@ -299,110 +299,90 @@ class _ExcalidrawColorPickerState extends State<_ExcalidrawColorPicker> {
           children: [
             Text(
               "Colors",
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: cp.subtext1),
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: palette.brightBlack,
+              ),
             ),
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: TagPalette.baseColors.map((color) {
-                final isSelected = _currentBase.toARGB32() == color.toARGB32();
-                return GestureDetector(
-                  onTap: () => _updateColor(color),
-                  child: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: color,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: isSelected ? cp.mauve : cp.surface0,
-                        width: isSelected ? 2 : 1,
+              children:
+                  TagPalette.baseColors.map((color) {
+                    final isSelected = _currentColor == color;
+                    final hexColor = palette[color];
+                    return GestureDetector(
+                      onTap: () => _updateColor(color),
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: hexColor,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: isSelected ? palette.magenta : palette.black,
+                            width: isSelected ? 2 : 1,
+                          ),
+                          boxShadow:
+                              isSelected
+                                  ? [
+                                    BoxShadow(
+                                      color: palette.magenta.withValues(
+                                        alpha: 0.2,
+                                      ),
+                                      blurRadius: 4,
+                                    ),
+                                  ]
+                                  : null,
+                        ),
                       ),
-                      boxShadow: isSelected
-                          ? [BoxShadow(color: cp.mauve.withValues(alpha: 0.2), blurRadius: 4)]
-                          : null,
-                    ),
-                  ),
-                );
-              }).toList(),
+                    );
+                  }).toList(),
             ),
             const SizedBox(height: 20),
             Text(
               "Shades",
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: cp.subtext1),
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: palette.brightBlack,
+              ),
             ),
             const SizedBox(height: 12),
-            if (shades != null)
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: shades.map((color) {
-                  final isSelected = _currentColor.toARGB32() == color.toARGB32();
-                  return GestureDetector(
-                    onTap: () => _updateColor(color, updateBase: false),
-                    child: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: color,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: isSelected ? cp.mauve : cp.surface0,
-                          width: isSelected ? 2 : 1,
-                        ),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: List.generate(5, (index) {
+                final isSelected = _currentShade == index;
+                final shadeColor = TagPalette.resolveColor(
+                  context,
+                  TagColor(_currentColor, index),
+                );
+                return GestureDetector(
+                  onTap: () => _updateShade(index),
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: shadeColor,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: isSelected ? palette.magenta : palette.black,
+                        width: isSelected ? 2 : 1,
                       ),
-                    ),
-                  );
-                }).toList(),
-              )
-            else
-              Text(
-                "No shades available for this color",
-                style: TextStyle(fontSize: 12, color: cp.subtext0, fontStyle: FontStyle.italic),
-              ),
-            const SizedBox(height: 20),
-            Text(
-              "Hex code",
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: cp.subtext1),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              decoration: BoxDecoration(
-                color: cp.surface0,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: cp.surface1),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Row(
-                children: [
-                  Text("#", style: TextStyle(color: cp.overlay0, fontSize: 16)),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: TextField(
-                      controller: _hexController,
-                      decoration: const InputDecoration(
-                        border: InputBorder.none,
-                        isDense: true,
-                        contentPadding: EdgeInsets.symmetric(vertical: 10),
-                      ),
-                      style: TextStyle(fontFamily: 'monospace', fontSize: 14, color: cp.text),
-                      onSubmitted: (value) {
-                        final color = Color(int.parse("FF$value", radix: 16));
-                        _updateColor(color);
-                      },
                     ),
                   ),
-                  Icon(Icons.edit_outlined, size: 18, color: cp.overlay0),
-                ],
-              ),
+                );
+              }),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             Align(
               alignment: Alignment.centerRight,
               child: TextButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: Text("Done", style: TextStyle(color: cp.mauve)),
+                child: Text("Done", style: TextStyle(color: palette.magenta)),
               ),
             ),
           ],

@@ -873,11 +873,11 @@ class $TagColorsTable extends TagColors
   );
   static const VerificationMeta _colorMeta = const VerificationMeta('color');
   @override
-  late final GeneratedColumn<int> color = GeneratedColumn<int>(
+  late final GeneratedColumn<String> color = GeneratedColumn<String>(
     'color',
     aliasedName,
     false,
-    type: DriftSqlType.int,
+    type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
   @override
@@ -924,7 +924,7 @@ class $TagColorsTable extends TagColors
         data['${effectivePrefix}tag_name'],
       )!,
       color: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
+        DriftSqlType.string,
         data['${effectivePrefix}color'],
       )!,
     );
@@ -938,13 +938,13 @@ class $TagColorsTable extends TagColors
 
 class TagColor extends DataClass implements Insertable<TagColor> {
   final String tagName;
-  final int color;
+  final String color;
   const TagColor({required this.tagName, required this.color});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['tag_name'] = Variable<String>(tagName);
-    map['color'] = Variable<int>(color);
+    map['color'] = Variable<String>(color);
     return map;
   }
 
@@ -959,7 +959,7 @@ class TagColor extends DataClass implements Insertable<TagColor> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return TagColor(
       tagName: serializer.fromJson<String>(json['tagName']),
-      color: serializer.fromJson<int>(json['color']),
+      color: serializer.fromJson<String>(json['color']),
     );
   }
   @override
@@ -967,11 +967,11 @@ class TagColor extends DataClass implements Insertable<TagColor> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'tagName': serializer.toJson<String>(tagName),
-      'color': serializer.toJson<int>(color),
+      'color': serializer.toJson<String>(color),
     };
   }
 
-  TagColor copyWith({String? tagName, int? color}) =>
+  TagColor copyWith({String? tagName, String? color}) =>
       TagColor(tagName: tagName ?? this.tagName, color: color ?? this.color);
   TagColor copyWithCompanion(TagColorsCompanion data) {
     return TagColor(
@@ -1001,7 +1001,7 @@ class TagColor extends DataClass implements Insertable<TagColor> {
 
 class TagColorsCompanion extends UpdateCompanion<TagColor> {
   final Value<String> tagName;
-  final Value<int> color;
+  final Value<String> color;
   final Value<int> rowid;
   const TagColorsCompanion({
     this.tagName = const Value.absent(),
@@ -1010,13 +1010,13 @@ class TagColorsCompanion extends UpdateCompanion<TagColor> {
   });
   TagColorsCompanion.insert({
     required String tagName,
-    required int color,
+    required String color,
     this.rowid = const Value.absent(),
   }) : tagName = Value(tagName),
        color = Value(color);
   static Insertable<TagColor> custom({
     Expression<String>? tagName,
-    Expression<int>? color,
+    Expression<String>? color,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1028,7 +1028,7 @@ class TagColorsCompanion extends UpdateCompanion<TagColor> {
 
   TagColorsCompanion copyWith({
     Value<String>? tagName,
-    Value<int>? color,
+    Value<String>? color,
     Value<int>? rowid,
   }) {
     return TagColorsCompanion(
@@ -1045,7 +1045,7 @@ class TagColorsCompanion extends UpdateCompanion<TagColor> {
       map['tag_name'] = Variable<String>(tagName.value);
     }
     if (color.present) {
-      map['color'] = Variable<int>(color.value);
+      map['color'] = Variable<String>(color.value);
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -2008,13 +2008,13 @@ typedef $$NodeChildrenTableProcessedTableManager =
 typedef $$TagColorsTableCreateCompanionBuilder =
     TagColorsCompanion Function({
       required String tagName,
-      required int color,
+      required String color,
       Value<int> rowid,
     });
 typedef $$TagColorsTableUpdateCompanionBuilder =
     TagColorsCompanion Function({
       Value<String> tagName,
-      Value<int> color,
+      Value<String> color,
       Value<int> rowid,
     });
 
@@ -2032,7 +2032,7 @@ class $$TagColorsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<int> get color => $composableBuilder(
+  ColumnFilters<String> get color => $composableBuilder(
     column: $table.color,
     builder: (column) => ColumnFilters(column),
   );
@@ -2052,7 +2052,7 @@ class $$TagColorsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<int> get color => $composableBuilder(
+  ColumnOrderings<String> get color => $composableBuilder(
     column: $table.color,
     builder: (column) => ColumnOrderings(column),
   );
@@ -2070,7 +2070,7 @@ class $$TagColorsTableAnnotationComposer
   GeneratedColumn<String> get tagName =>
       $composableBuilder(column: $table.tagName, builder: (column) => column);
 
-  GeneratedColumn<int> get color =>
+  GeneratedColumn<String> get color =>
       $composableBuilder(column: $table.color, builder: (column) => column);
 }
 
@@ -2103,7 +2103,7 @@ class $$TagColorsTableTableManager
           updateCompanionCallback:
               ({
                 Value<String> tagName = const Value.absent(),
-                Value<int> color = const Value.absent(),
+                Value<String> color = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => TagColorsCompanion(
                 tagName: tagName,
@@ -2113,7 +2113,7 @@ class $$TagColorsTableTableManager
           createCompanionCallback:
               ({
                 required String tagName,
-                required int color,
+                required String color,
                 Value<int> rowid = const Value.absent(),
               }) => TagColorsCompanion.insert(
                 tagName: tagName,

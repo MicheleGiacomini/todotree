@@ -28,7 +28,7 @@ abstract class StorageNode with _$StorageNode {
 
 abstract class BaseMapRepository implements ElementRepository {
   final Map<NodeId, StorageNode> nodes;
-  final Map<String, int> tagColors;
+  final Map<String, String> tagColors;
 
   static const NodeId rootId = NodeId.fromString("-1");
 
@@ -94,12 +94,12 @@ abstract class BaseMapRepository implements ElementRepository {
   }
 
   @override
-  Future<Map<String, int>> getTagColors() async {
+  Future<Map<String, String>> getTagColors() async {
     return tagColors;
   }
 
   @override
-  Future<void> setTagColor(String tagName, int color) async {
+  Future<void> setTagColor(String tagName, String color) async {
     tagColors[tagName] = color;
   }
 

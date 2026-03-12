@@ -20,8 +20,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'TodoTree',
-      theme: Catppuccin.latte,
-      darkTheme: Catppuccin.mocha,
+      theme: Catppuccin.latteTheme,
+      darkTheme: Catppuccin.mochaTheme,
       themeMode: ThemeMode.system,
       home: const MyHomePage(title: 'TodoTree'),
     );
@@ -90,7 +90,7 @@ class _MyHomePageState extends State<MyHomePage> {
               final elements = data[0] as Map<NodeId, Node>;
               final rootId = data[1] as NodeId;
               final tags = data[2] as ISet<Tag>;
-              final tagColors = data[3] as Map<String, int>;
+              final tagColors = data[3] as Map<String, String>;
 
               return _MainPageContent(
                 repository: repository,
@@ -112,7 +112,7 @@ class _MainPageContent extends StatefulWidget {
   final Map<NodeId, Node> initialNodes;
   final NodeId rootNode;
   final Set<Tag> initialTagList;
-  final Map<String, int> initialTagColors;
+  final Map<String, String> initialTagColors;
 
   const _MainPageContent({
     required this.repository,
@@ -133,7 +133,7 @@ class __MainPageContentState extends State<_MainPageContent> {
   bool showDone = false;
   static final _scaffoldKey = GlobalKey<ScaffoldState>();
   late Set<Tag> tags;
-  late Map<String, int> tagColors;
+  late Map<String, String> tagColors;
 
   @override
   void initState() {
@@ -204,7 +204,7 @@ class __MainPageContentState extends State<_MainPageContent> {
     });
   }
 
-  Future<void> _setTagColor(String tagName, int color) async {
+  Future<void> _setTagColor(String tagName, String color) async {
     await widget.repository.setTagColor(tagName, color);
     setState(() {
       tagColors[tagName] = color;

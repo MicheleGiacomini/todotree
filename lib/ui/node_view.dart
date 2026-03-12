@@ -21,9 +21,9 @@ class NodeList extends StatefulWidget {
   final void Function() onToggleShowDone;
   final void Function(NodeId, Tag) onAddTag;
   final void Function(NodeId, Tag) onRemoveTag;
-  final void Function(String, int) onSetTagColor;
+  final void Function(String, String) onSetTagColor;
   final Set<Tag> allTags;
-  final Map<String, int> tagColors;
+  final Map<String, String> tagColors;
   final Set<NodeId> nodesBeingEdited;
   final bool allowMultipleEdits;
   final void Function() onToggleMultiEdit;
@@ -134,7 +134,7 @@ class _NodeListState extends State<NodeList> {
   Widget build(BuildContext context) {
     final nodes = _buildChildren(currentBase, 0);
     final theme = Theme.of(context);
-    final cp = theme.catppuccin;
+    final cp = theme.palette;
 
     return SliverMainAxisGroup(
       slivers: [
@@ -155,14 +155,14 @@ class _NodeListState extends State<NodeList> {
               child: Text(
                 _nodeProvider(currentBase).description.content,
                 overflow: TextOverflow.fade,
-                style: TextStyle(color: cp.text),
+                style: TextStyle(color: cp.foreground),
               ),
             ),
           ),
           leading: Center(
             child: ClickableIcon(
               icon: Icons.home,
-              color: cp.lavender,
+              color: cp.brightBlue,
               onTap: () {
                 setState(() {
                   currentBase = widget.treeRoot;
@@ -173,14 +173,14 @@ class _NodeListState extends State<NodeList> {
           actions: [
             ClickableIcon(
               icon: widget.showDone ? Icons.visibility : Icons.visibility_off,
-              color: cp.sky,
+              color: cp.cyan,
               onTap: widget.onToggleShowDone,
             ),
             ClickableIcon(
               icon: widget.allowMultipleEdits
                   ? Icons.layers
                   : Icons.layers_clear,
-              color: cp.pink,
+              color: cp.magenta,
               onTap: widget.onToggleMultiEdit,
             ),
             ClickableIcon(
@@ -322,9 +322,9 @@ class NodeView extends StatefulWidget {
   final void Function(bool) onDoneChanged;
   final void Function(Tag) onAddTag;
   final void Function(Tag) onRemoveTag;
-  final void Function(String, int) onSetTagColor;
+  final void Function(String, String) onSetTagColor;
   final Set<Tag> allTags;
-  final Map<String, int> tagColors;
+  final Map<String, String> tagColors;
   final bool allChildrenDone;
   final Duration animationDuration;
 
@@ -394,7 +394,7 @@ class _NodeViewState extends State<NodeView> {
   Widget build(BuildContext context) {
     final node = widget.nodeProvider(widget.nodeId);
     final theme = Theme.of(context);
-    final cp = theme.catppuccin;
+    final cp = theme.palette;
     final effectiveIconTurns = widget.expanded ? 0.25 : 0.0;
     final opacity = node.done ? 0.5 : 1.0;
 
@@ -423,8 +423,8 @@ class _NodeViewState extends State<NodeView> {
                       duration: widget.animationDuration,
                       child:
                           widget.onExpand == null
-                              ? Icon(Icons.remove, color: cp.overlay0)
-                              : Icon(Icons.chevron_right, color: cp.overlay0),
+                              ? Icon(Icons.remove, color: cp.brightBlack)
+                              : Icon(Icons.chevron_right, color: cp.brightBlack),
                     ),
                     Checkbox(
                       value: node.done,
@@ -451,12 +451,12 @@ class _NodeViewState extends State<NodeView> {
                               isDense: true,
                             ),
                             style: TextStyle(
-                              color: cp.text,
+                              color: cp.foreground,
                               decoration:
                                   node.done
                                       ? TextDecoration.lineThrough
                                       : null,
-                              decorationColor: cp.overlay0,
+                              decorationColor: cp.brightBlack,
                             ),
                             onChanged: (value) {
                               widget.onDescriptionChanged(
@@ -478,8 +478,13 @@ class _NodeViewState extends State<NodeView> {
                                 alignment: WrapAlignment.end,
                                 children:
                                     node.tags.map((tag) {
-                                      final color = TagPalette.getColor(
-                                        widget.tagColors[tag.name],
+                                      final tagColorStr = widget.tagColors[tag.name];
+                                      final tagColor = tagColorStr != null 
+                                          ? TagColor.fromStorageString(tagColorStr)
+                                          : const TagColor(SemanticColor.blue);
+                                      final color = TagPalette.resolveColor(
+                                        context,
+                                        tagColor,
                                       );
                                       return Container(
                                         padding: const EdgeInsets.symmetric(
@@ -526,7 +531,7 @@ class _NodeViewState extends State<NodeView> {
                     ),
                     ClickableIcon(
                       icon: Icons.folder_open,
-                      color: cp.peach,
+                      color: cp.yellow,
                       onTap: widget.onEnter,
                     ),
                     ClickableIcon(
@@ -551,15 +556,15 @@ class _NodeViewState extends State<NodeView> {
                         controller: _detailsController,
                         minLines: 3,
                         maxLines: null,
-                        style: TextStyle(color: cp.text),
+                        style: TextStyle(color: cp.foreground),
                         decoration: InputDecoration(
                           labelText: "Details",
-                          labelStyle: TextStyle(color: cp.overlay0),
+                          labelStyle: TextStyle(color: cp.brightBlack),
                           enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: cp.surface1),
+                            borderSide: BorderSide(color: cp.black),
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: cp.mauve),
+                            borderSide: BorderSide(color: cp.magenta),
                           ),
                         ),
                         onChanged: (value) {

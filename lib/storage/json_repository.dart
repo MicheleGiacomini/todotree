@@ -28,7 +28,7 @@ class JsonRepository extends BaseMapRepository {
           return MapEntry(id, StorageNode.fromJson(value as Map<String, dynamic>));
         });
 
-        final tagColors = tagColorsJson.map((key, value) => MapEntry(key, value as int));
+        final tagColors = tagColorsJson.map((key, value) => MapEntry(key, value as String));
 
         return JsonRepository._(nodes, tagColors, file);
       } catch (e) {
@@ -62,7 +62,7 @@ class JsonRepository extends BaseMapRepository {
   }
 
   @override
-  Future<void> setTagColor(String tagName, int color) async {
+  Future<void> setTagColor(String tagName, String color) async {
     await super.setTagColor(tagName, color);
     await _save();
   }

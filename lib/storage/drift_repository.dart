@@ -13,7 +13,7 @@ part 'drift_repository.g.dart';
 
 class TagColors extends Table {
   TextColumn get tagName => text()();
-  IntColumn get color => integer()();
+  TextColumn get color => text()();
 
   @override
   Set<Column> get primaryKey => {tagName};
@@ -177,13 +177,13 @@ class DriftRepository implements ElementRepository {
   }
 
   @override
-  Future<Map<String, int>> getTagColors() async {
+  Future<Map<String, String>> getTagColors() async {
     final allColors = await db.select(db.tagColors).get();
     return {for (final c in allColors) c.tagName: c.color};
   }
 
   @override
-  Future<void> setTagColor(String tagName, int color) async {
+  Future<void> setTagColor(String tagName, String color) async {
     await db.into(db.tagColors).insertOnConflictUpdate(
       TagColorsCompanion.insert(tagName: tagName, color: color),
     );
