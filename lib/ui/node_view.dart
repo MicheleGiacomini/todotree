@@ -378,47 +378,69 @@ class _NodeViewState extends State<NodeView> {
                     ? Icon(Icons.remove)
                     : Icon(Icons.chevron_right),
               ),
-              title: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  DebouncedTextField(
-                    controller: _descriptionController,
-                    decoration: InputDecoration(border: InputBorder.none),
-                    onChanged: (value) {
-                      widget.onDescriptionChanged(NodeDescription(content: value));
-                    },
-                  ),
-                  if (node.tags.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8.0),
-                      child: Wrap(
-                        spacing: 4.0,
-                        runSpacing: 2.0,
-                        children: node.tags.map((tag) {
-                          final color = TagPalette.getColor(widget.tagColors[tag.name]);
-                          return Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6.0,
-                              vertical: 2.0,
-                            ),
-                            decoration: BoxDecoration(
-                              color: color,
-                              borderRadius: BorderRadius.circular(4.0),
-                            ),
-                            child: Text(
-                              tag.name,
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: TagPalette.getContrastColor(color),
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          );
-                        }).toList(),
+              title: LayoutBuilder(
+                builder: (context, constraints) {
+                  return Row(
+                    children: [
+                      Expanded(
+                        child: DebouncedTextField(
+                          controller: _descriptionController,
+                          decoration: InputDecoration(
+                            border: InputBorder.none,
+                            isDense: true,
+                          ),
+                          onChanged: (value) {
+                            widget.onDescriptionChanged(
+                              NodeDescription(content: value),
+                            );
+                          },
+                        ),
                       ),
-                    ),
-                ],
+                      if (node.tags.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 8.0),
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxWidth: constraints.maxWidth / 2,
+                            ),
+                            child: Wrap(
+                              spacing: 4.0,
+                              runSpacing: 2.0,
+                              alignment: WrapAlignment.end,
+                              children:
+                                  node.tags.map((tag) {
+                                    final color = TagPalette.getColor(
+                                      widget.tagColors[tag.name],
+                                    );
+                                    return Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6.0,
+                                        vertical: 2.0,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: color,
+                                        borderRadius: BorderRadius.circular(
+                                          4.0,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        tag.name,
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: TagPalette.getContrastColor(
+                                            color,
+                                          ),
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
+                            ),
+                          ),
+                        ),
+                    ],
+                  );
+                },
               ),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
