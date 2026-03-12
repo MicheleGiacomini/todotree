@@ -26,6 +26,7 @@ class Nodes extends Table {
   IntColumn get nodeIndex => integer()();
   TextColumn get description => text()();
   TextColumn get details => text()();
+  BoolColumn get done => boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -107,6 +108,7 @@ class DriftRepository implements ElementRepository {
       id: NodeId.fromString(dbNode.id),
       description: NodeDescription(content: dbNode.description),
       details: NodeDetails(content: dbNode.details),
+      done: dbNode.done,
       tags: tags.map((t) => Tag(name: t.tagName)).toIList(),
       children: children
           .sortedBy((e) => e.nodeIndex)
@@ -150,6 +152,7 @@ class DriftRepository implements ElementRepository {
       nodeIndex: currentChildren.length,
       description: "",
       details: "",
+      done: false,
     );
 
     await db.transaction(() async {
@@ -369,6 +372,18 @@ class DriftRepository implements ElementRepository {
     final idStr = id.toJson().toString();
     await (db.update(db.nodes)..where((t) => t.id.equals(idStr))).write(
       NodesCompanion(details: Value(newDetails.content)),
+    );
+    final dbNode = await (db.select(
+      db.nodes,
+    )..where((t) => t.id.equals(idStr))).getSingle();
+    return _buildNode(dbNode);
+  }
+
+  @override
+  Future<Node> updateDone(NodeId id, bool done) async {
+    final idStr = id.toJson().toString();
+    await (db.update(db.nodes)..where((t) => t.id.equals(idStr))).write(
+      NodesCompanion(done: Value(done)),
     );
     final dbNode = await (db.select(
       db.nodes,

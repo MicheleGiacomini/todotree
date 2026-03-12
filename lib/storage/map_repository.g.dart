@@ -16,6 +16,7 @@ _StorageNode _$StorageNodeFromJson(Map<String, dynamic> json) => _StorageNode(
     json['description'] as Map<String, dynamic>,
   ),
   details: NodeDetails.fromJson(json['details'] as Map<String, dynamic>),
+  done: json['done'] as bool? ?? false,
   tags: ISet<Tag>.fromJson(
     json['tags'],
     (value) => Tag.fromJson(value as Map<String, dynamic>),
@@ -33,6 +34,7 @@ Map<String, dynamic> _$StorageNodeToJson(_StorageNode instance) =>
       'nodeIndex': instance.nodeIndex,
       'description': instance.description,
       'details': instance.details,
+      'done': instance.done,
       'tags': instance.tags.toJson((value) => value),
       'children': instance.children.toJson((value) => value),
     };

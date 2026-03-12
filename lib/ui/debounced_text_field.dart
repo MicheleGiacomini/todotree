@@ -6,6 +6,7 @@ class DebouncedTextField extends StatefulWidget {
   final ValueChanged<String> onChanged;
   final Duration debounceDuration;
   final InputDecoration? decoration;
+  final TextStyle? style;
   final int? minLines;
   final int? maxLines;
 
@@ -15,6 +16,7 @@ class DebouncedTextField extends StatefulWidget {
     required this.onChanged,
     this.debounceDuration = const Duration(milliseconds: 300),
     this.decoration,
+    this.style,
     this.minLines,
     this.maxLines,
   });
@@ -37,6 +39,7 @@ class _DebouncedTextFieldState extends State<DebouncedTextField> {
     return TextField(
       controller: widget.controller,
       decoration: widget.decoration,
+      style: widget.style,
       minLines: widget.minLines,
       maxLines: widget.maxLines,
       onChanged: (value) {

@@ -17,6 +17,7 @@ abstract class StorageNode with _$StorageNode {
     required int nodeIndex,
     required NodeDescription description,
     required NodeDetails details,
+    @Default(false) bool done,
     @ISetConverter<Tag>() required ISet<Tag> tags,
     @IListConverter<NodeId>() required IList<NodeId> children,
   }) = _StorageNode;
@@ -42,6 +43,7 @@ abstract class BaseMapRepository implements ElementRepository {
       id: node.id,
       description: node.description,
       details: node.details,
+      done: node.done,
       tags: node.tags.toIList(),
       children: children.toIList(),
     );
@@ -65,6 +67,7 @@ abstract class BaseMapRepository implements ElementRepository {
       nodeIndex: currentParent.children.length,
       description: NodeDescription(content: ""),
       details: NodeDetails(content: ""),
+      done: false,
       tags: const ISet.empty(),
       children: const IList.empty(),
     );
@@ -213,6 +216,14 @@ abstract class BaseMapRepository implements ElementRepository {
   Future<Node> updateDetails(NodeId id, NodeDetails newDetails) async {
     final currentNode = nodes[id]!;
     final updatedNode = currentNode.copyWith(details: newDetails);
+    nodes[id] = updatedNode;
+    return _buildNode(updatedNode);
+  }
+
+  @override
+  Future<Node> updateDone(NodeId id, bool done) async {
+    final currentNode = nodes[id]!;
+    final updatedNode = currentNode.copyWith(done: done);
     nodes[id] = updatedNode;
     return _buildNode(updatedNode);
   }

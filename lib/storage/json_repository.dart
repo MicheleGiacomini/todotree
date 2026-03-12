@@ -132,4 +132,11 @@ class JsonRepository extends BaseMapRepository {
     await _save();
     return result;
   }
+
+  @override
+  Future<Node> updateDone(NodeId id, bool done) async {
+    final result = await super.updateDone(id, done);
+    await _save();
+    return result;
+  }
 }

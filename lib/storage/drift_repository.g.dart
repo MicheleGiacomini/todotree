@@ -61,6 +61,19 @@ class $NodesTable extends Nodes with TableInfo<$NodesTable, DbNode> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _doneMeta = const VerificationMeta('done');
+  @override
+  late final GeneratedColumn<bool> done = GeneratedColumn<bool>(
+    'done',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("done" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -68,6 +81,7 @@ class $NodesTable extends Nodes with TableInfo<$NodesTable, DbNode> {
     nodeIndex,
     description,
     details,
+    done,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -119,6 +133,12 @@ class $NodesTable extends Nodes with TableInfo<$NodesTable, DbNode> {
     } else if (isInserting) {
       context.missing(_detailsMeta);
     }
+    if (data.containsKey('done')) {
+      context.handle(
+        _doneMeta,
+        done.isAcceptableOrUnknown(data['done']!, _doneMeta),
+      );
+    }
     return context;
   }
 
@@ -148,6 +168,10 @@ class $NodesTable extends Nodes with TableInfo<$NodesTable, DbNode> {
         DriftSqlType.string,
         data['${effectivePrefix}details'],
       )!,
+      done: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}done'],
+      )!,
     );
   }
 
@@ -163,12 +187,14 @@ class DbNode extends DataClass implements Insertable<DbNode> {
   final int nodeIndex;
   final String description;
   final String details;
+  final bool done;
   const DbNode({
     required this.id,
     this.parentId,
     required this.nodeIndex,
     required this.description,
     required this.details,
+    required this.done,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -180,6 +206,7 @@ class DbNode extends DataClass implements Insertable<DbNode> {
     map['node_index'] = Variable<int>(nodeIndex);
     map['description'] = Variable<String>(description);
     map['details'] = Variable<String>(details);
+    map['done'] = Variable<bool>(done);
     return map;
   }
 
@@ -192,6 +219,7 @@ class DbNode extends DataClass implements Insertable<DbNode> {
       nodeIndex: Value(nodeIndex),
       description: Value(description),
       details: Value(details),
+      done: Value(done),
     );
   }
 
@@ -206,6 +234,7 @@ class DbNode extends DataClass implements Insertable<DbNode> {
       nodeIndex: serializer.fromJson<int>(json['nodeIndex']),
       description: serializer.fromJson<String>(json['description']),
       details: serializer.fromJson<String>(json['details']),
+      done: serializer.fromJson<bool>(json['done']),
     );
   }
   @override
@@ -217,6 +246,7 @@ class DbNode extends DataClass implements Insertable<DbNode> {
       'nodeIndex': serializer.toJson<int>(nodeIndex),
       'description': serializer.toJson<String>(description),
       'details': serializer.toJson<String>(details),
+      'done': serializer.toJson<bool>(done),
     };
   }
 
@@ -226,12 +256,14 @@ class DbNode extends DataClass implements Insertable<DbNode> {
     int? nodeIndex,
     String? description,
     String? details,
+    bool? done,
   }) => DbNode(
     id: id ?? this.id,
     parentId: parentId.present ? parentId.value : this.parentId,
     nodeIndex: nodeIndex ?? this.nodeIndex,
     description: description ?? this.description,
     details: details ?? this.details,
+    done: done ?? this.done,
   );
   DbNode copyWithCompanion(NodesCompanion data) {
     return DbNode(
@@ -242,6 +274,7 @@ class DbNode extends DataClass implements Insertable<DbNode> {
           ? data.description.value
           : this.description,
       details: data.details.present ? data.details.value : this.details,
+      done: data.done.present ? data.done.value : this.done,
     );
   }
 
@@ -252,14 +285,15 @@ class DbNode extends DataClass implements Insertable<DbNode> {
           ..write('parentId: $parentId, ')
           ..write('nodeIndex: $nodeIndex, ')
           ..write('description: $description, ')
-          ..write('details: $details')
+          ..write('details: $details, ')
+          ..write('done: $done')
           ..write(')'))
         .toString();
   }
 
   @override
   int get hashCode =>
-      Object.hash(id, parentId, nodeIndex, description, details);
+      Object.hash(id, parentId, nodeIndex, description, details, done);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -268,7 +302,8 @@ class DbNode extends DataClass implements Insertable<DbNode> {
           other.parentId == this.parentId &&
           other.nodeIndex == this.nodeIndex &&
           other.description == this.description &&
-          other.details == this.details);
+          other.details == this.details &&
+          other.done == this.done);
 }
 
 class NodesCompanion extends UpdateCompanion<DbNode> {
@@ -277,6 +312,7 @@ class NodesCompanion extends UpdateCompanion<DbNode> {
   final Value<int> nodeIndex;
   final Value<String> description;
   final Value<String> details;
+  final Value<bool> done;
   final Value<int> rowid;
   const NodesCompanion({
     this.id = const Value.absent(),
@@ -284,6 +320,7 @@ class NodesCompanion extends UpdateCompanion<DbNode> {
     this.nodeIndex = const Value.absent(),
     this.description = const Value.absent(),
     this.details = const Value.absent(),
+    this.done = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   NodesCompanion.insert({
@@ -292,6 +329,7 @@ class NodesCompanion extends UpdateCompanion<DbNode> {
     required int nodeIndex,
     required String description,
     required String details,
+    this.done = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        nodeIndex = Value(nodeIndex),
@@ -303,6 +341,7 @@ class NodesCompanion extends UpdateCompanion<DbNode> {
     Expression<int>? nodeIndex,
     Expression<String>? description,
     Expression<String>? details,
+    Expression<bool>? done,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -311,6 +350,7 @@ class NodesCompanion extends UpdateCompanion<DbNode> {
       if (nodeIndex != null) 'node_index': nodeIndex,
       if (description != null) 'description': description,
       if (details != null) 'details': details,
+      if (done != null) 'done': done,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -321,6 +361,7 @@ class NodesCompanion extends UpdateCompanion<DbNode> {
     Value<int>? nodeIndex,
     Value<String>? description,
     Value<String>? details,
+    Value<bool>? done,
     Value<int>? rowid,
   }) {
     return NodesCompanion(
@@ -329,6 +370,7 @@ class NodesCompanion extends UpdateCompanion<DbNode> {
       nodeIndex: nodeIndex ?? this.nodeIndex,
       description: description ?? this.description,
       details: details ?? this.details,
+      done: done ?? this.done,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -351,6 +393,9 @@ class NodesCompanion extends UpdateCompanion<DbNode> {
     if (details.present) {
       map['details'] = Variable<String>(details.value);
     }
+    if (done.present) {
+      map['done'] = Variable<bool>(done.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -365,6 +410,7 @@ class NodesCompanion extends UpdateCompanion<DbNode> {
           ..write('nodeIndex: $nodeIndex, ')
           ..write('description: $description, ')
           ..write('details: $details, ')
+          ..write('done: $done, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1044,6 +1090,7 @@ typedef $$NodesTableCreateCompanionBuilder =
       required int nodeIndex,
       required String description,
       required String details,
+      Value<bool> done,
       Value<int> rowid,
     });
 typedef $$NodesTableUpdateCompanionBuilder =
@@ -1053,6 +1100,7 @@ typedef $$NodesTableUpdateCompanionBuilder =
       Value<int> nodeIndex,
       Value<String> description,
       Value<String> details,
+      Value<bool> done,
       Value<int> rowid,
     });
 
@@ -1110,6 +1158,11 @@ class $$NodesTableFilterComposer extends Composer<_$AppDatabase, $NodesTable> {
 
   ColumnFilters<String> get details => $composableBuilder(
     column: $table.details,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get done => $composableBuilder(
+    column: $table.done,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1172,6 +1225,11 @@ class $$NodesTableOrderingComposer
     column: $table.details,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get done => $composableBuilder(
+    column: $table.done,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$NodesTableAnnotationComposer
@@ -1199,6 +1257,9 @@ class $$NodesTableAnnotationComposer
 
   GeneratedColumn<String> get details =>
       $composableBuilder(column: $table.details, builder: (column) => column);
+
+  GeneratedColumn<bool> get done =>
+      $composableBuilder(column: $table.done, builder: (column) => column);
 
   Expression<T> nodeTagsRefs<T extends Object>(
     Expression<T> Function($$NodeTagsTableAnnotationComposer a) f,
@@ -1259,6 +1320,7 @@ class $$NodesTableTableManager
                 Value<int> nodeIndex = const Value.absent(),
                 Value<String> description = const Value.absent(),
                 Value<String> details = const Value.absent(),
+                Value<bool> done = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => NodesCompanion(
                 id: id,
@@ -1266,6 +1328,7 @@ class $$NodesTableTableManager
                 nodeIndex: nodeIndex,
                 description: description,
                 details: details,
+                done: done,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -1275,6 +1338,7 @@ class $$NodesTableTableManager
                 required int nodeIndex,
                 required String description,
                 required String details,
+                Value<bool> done = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => NodesCompanion.insert(
                 id: id,
@@ -1282,6 +1346,7 @@ class $$NodesTableTableManager
                 nodeIndex: nodeIndex,
                 description: description,
                 details: details,
+                done: done,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

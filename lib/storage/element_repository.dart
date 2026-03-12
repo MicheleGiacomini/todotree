@@ -52,6 +52,7 @@ abstract interface class ElementRepository {
   Future<NodeId> getRootId();
   Future<Node> updateDesription(NodeId id, NodeDescription newDescription);
   Future<Node> updateDetails(NodeId id, NodeDetails newDetails);
+  Future<Node> updateDone(NodeId id, bool done);
   Future<Node> addTag(NodeId id, Tag tag);
   Future<Node> removeTag(NodeId id, Tag tag);
   Future<void> setTagColor(String tagName, int color);

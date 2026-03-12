@@ -69,6 +69,7 @@ abstract class Node with _$Node {
     required NodeId id,
     required NodeDescription description,
     required NodeDetails details,
+    @Default(false) bool done,
     @IListConverter<Tag>() required IList<Tag> tags,
     @IListConverter<NodeId>() required IList<NodeId> children,
   }) = _Node;

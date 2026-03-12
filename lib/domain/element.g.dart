@@ -31,6 +31,7 @@ _Node _$NodeFromJson(Map<String, dynamic> json) => _Node(
     json['description'] as Map<String, dynamic>,
   ),
   details: NodeDetails.fromJson(json['details'] as Map<String, dynamic>),
+  done: json['done'] as bool? ?? false,
   tags: IList<Tag>.fromJson(
     json['tags'],
     (value) => Tag.fromJson(value as Map<String, dynamic>),
@@ -45,6 +46,7 @@ Map<String, dynamic> _$NodeToJson(_Node instance) => <String, dynamic>{
   'id': instance.id,
   'description': instance.description,
   'details': instance.details,
+  'done': instance.done,
   'tags': instance.tags.toJson((value) => value),
   'children': instance.children.toJson((value) => value),
 };

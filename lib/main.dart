@@ -129,6 +129,7 @@ class __MainPageContentState extends State<_MainPageContent> {
   late Map<NodeId, Node> nodes;
   Set<NodeId> nodesBeingEdited = {};
   bool allowMultipleEdits = false;
+  bool showDone = false;
   static final _scaffoldKey = GlobalKey<ScaffoldState>();
   late Set<Tag> tags;
   late Map<String, int> tagColors;
@@ -177,6 +178,12 @@ class __MainPageContentState extends State<_MainPageContent> {
 
   Future<void> _updateDetails(NodeId id, NodeDetails details) async {
     final result = await widget.repository.updateDetails(id, details);
+    nodes[result.id] = result;
+    setState(() {});
+  }
+
+  Future<void> _updateDone(NodeId id, bool done) async {
+    final result = await widget.repository.updateDone(id, done);
     nodes[result.id] = result;
     setState(() {});
   }
@@ -242,6 +249,13 @@ class __MainPageContentState extends State<_MainPageContent> {
             onEdit: _onEditNode,
             onDescriptionChanged: _updateDescription,
             onDetailsChanged: _updateDetails,
+            onDoneChanged: _updateDone,
+            showDone: showDone,
+            onToggleShowDone: () {
+              setState(() {
+                showDone = !showDone;
+              });
+            },
             onAddTag: _addTag,
             onRemoveTag: _removeTag,
             onSetTagColor: _setTagColor,

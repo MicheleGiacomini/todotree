@@ -16,6 +16,9 @@ class NodeList extends StatefulWidget {
   final void Function(NodeId) onEdit;
   final void Function(NodeId, NodeDescription) onDescriptionChanged;
   final void Function(NodeId, NodeDetails) onDetailsChanged;
+  final void Function(NodeId, bool) onDoneChanged;
+  final bool showDone;
+  final void Function() onToggleShowDone;
   final void Function(NodeId, Tag) onAddTag;
   final void Function(NodeId, Tag) onRemoveTag;
   final void Function(String, int) onSetTagColor;
@@ -35,6 +38,9 @@ class NodeList extends StatefulWidget {
     required this.onEdit,
     required this.onDescriptionChanged,
     required this.onDetailsChanged,
+    required this.onDoneChanged,
+    required this.showDone,
+    required this.onToggleShowDone,
     required this.onAddTag,
     required this.onRemoveTag,
     required this.onSetTagColor,
@@ -91,11 +97,12 @@ class _NodeListState extends State<NodeList> {
   List<_NodeViewData> _buildChildren(NodeId id, int depth) {
     final node = _nodeProvider(id);
     return [
-      for (final childId in node.children) ...[
-        _NodeViewData(node: _nodeProvider(childId), depth: depth),
-        if (expandedNodes[childId] == true)
-          ..._buildChildren(childId, depth + 1),
-      ],
+      for (final childId in node.children)
+        if (widget.showDone || !(_nodeProvider(childId).done)) ...[
+          _NodeViewData(node: _nodeProvider(childId), depth: depth),
+          if (expandedNodes[childId] == true)
+            ..._buildChildren(childId, depth + 1),
+        ],
     ];
   }
 
@@ -149,6 +156,10 @@ class _NodeListState extends State<NodeList> {
             ),
           ),
           actions: [
+            ClickableIcon(
+              icon: widget.showDone ? Icons.visibility : Icons.visibility_off,
+              onTap: widget.onToggleShowDone,
+            ),
             ClickableIcon(
               icon: widget.allowMultipleEdits
                   ? Icons.layers
@@ -207,6 +218,9 @@ class _NodeListState extends State<NodeList> {
                       },
                       onDetailsChanged: (p0) {
                         widget.onDetailsChanged(id, p0);
+                      },
+                      onDoneChanged: (p0) {
+                        widget.onDoneChanged(id, p0);
                       },
                       onAddTag: (p0) {
                         widget.onAddTag(id, p0);
@@ -286,6 +300,7 @@ class NodeView extends StatefulWidget {
   final void Function() onEdit;
   final void Function(NodeDescription) onDescriptionChanged;
   final void Function(NodeDetails) onDetailsChanged;
+  final void Function(bool) onDoneChanged;
   final void Function(Tag) onAddTag;
   final void Function(Tag) onRemoveTag;
   final void Function(String, int) onSetTagColor;
@@ -308,6 +323,7 @@ class NodeView extends StatefulWidget {
     required this.onEdit,
     required this.onDescriptionChanged,
     required this.onDetailsChanged,
+    required this.onDoneChanged,
     required this.onAddTag,
     required this.onRemoveTag,
     required this.onSetTagColor,
@@ -358,141 +374,169 @@ class _NodeViewState extends State<NodeView> {
     final node = widget.nodeProvider(widget.nodeId);
     final theme = Theme.of(context);
     final effectiveIconTurns = widget.expanded ? 0.25 : 0.0;
+    final opacity = node.done ? 0.5 : 1.0;
+
     return Padding(
       padding: EdgeInsets.only(left: widget.level * widget.levelPadding),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(color: theme.dividerColor, width: 1.0),
-          ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              onTap: widget.onExpand,
-              leading: AnimatedRotation(
-                turns: effectiveIconTurns,
-                duration: widget.animationDuration,
-                child: widget.onExpand == null
-                    ? Icon(Icons.remove)
-                    : Icon(Icons.chevron_right),
-              ),
-              title: LayoutBuilder(
-                builder: (context, constraints) {
-                  return Row(
-                    children: [
-                      Expanded(
-                        child: DebouncedTextField(
-                          controller: _descriptionController,
-                          decoration: InputDecoration(
-                            border: InputBorder.none,
-                            isDense: true,
-                          ),
-                          onChanged: (value) {
-                            widget.onDescriptionChanged(
-                              NodeDescription(content: value),
-                            );
-                          },
-                        ),
-                      ),
-                      if (node.tags.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(left: 8.0),
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(
-                              maxWidth: constraints.maxWidth / 2,
-                            ),
-                            child: Wrap(
-                              spacing: 4.0,
-                              runSpacing: 2.0,
-                              alignment: WrapAlignment.end,
-                              children:
-                                  node.tags.map((tag) {
-                                    final color = TagPalette.getColor(
-                                      widget.tagColors[tag.name],
-                                    );
-                                    return Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 6.0,
-                                        vertical: 2.0,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: color,
-                                        borderRadius: BorderRadius.circular(
-                                          4.0,
-                                        ),
-                                      ),
-                                      child: Text(
-                                        tag.name,
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          color: TagPalette.getContrastColor(
-                                            color,
-                                          ),
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    );
-                                  }).toList(),
-                            ),
-                          ),
-                        ),
-                    ],
-                  );
-                },
-              ),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ClickableIcon(
-                    icon: widget.isEditing ? Icons.check : Icons.edit,
-                    onTap: widget.onEdit,
-                  ),
-                  ClickableIcon(
-                    icon: Icons.add_circle,
-                    onTap: widget.onCreateChild,
-                  ),
-                  ClickableIcon(icon: Icons.folder_open, onTap: widget.onEnter),
-                  ClickableIcon(icon: Icons.delete, onTap: widget.onPrune),
-                ],
-              ),
+      child: Opacity(
+        opacity: opacity,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(color: theme.dividerColor, width: 1.0),
             ),
-            if (widget.isEditing)
-              Padding(
-                padding: const EdgeInsets.only(
-                  left: 40.0,
-                  right: 16.0,
-                  bottom: 16.0,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                onTap: widget.onExpand,
+                leading: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    DebouncedTextField(
-                      controller: _detailsController,
-                      minLines: 3,
-                      maxLines: null,
-                      decoration: InputDecoration(
-                        labelText: "Details",
-                        border: OutlineInputBorder(),
-                      ),
-                      onChanged: (value) {
-                        widget.onDetailsChanged(NodeDetails(content: value));
-                      },
+                    AnimatedRotation(
+                      turns: effectiveIconTurns,
+                      duration: widget.animationDuration,
+                      child:
+                          widget.onExpand == null
+                              ? Icon(Icons.remove)
+                              : Icon(Icons.chevron_right),
                     ),
-                    const SizedBox(height: 8.0),
-                    TagEditor(
-                      currentTags: node.tags,
-                      allTags: widget.allTags,
-                      tagColors: widget.tagColors,
-                      onAddTag: widget.onAddTag,
-                      onRemoveTag: widget.onRemoveTag,
-                      onSetTagColor: widget.onSetTagColor,
+                    Checkbox(
+                      value: node.done,
+                      onChanged: (value) {
+                        if (value != null) {
+                          widget.onDoneChanged(value);
+                        }
+                      },
                     ),
                   ],
                 ),
+                title: LayoutBuilder(
+                  builder: (context, constraints) {
+                    return Row(
+                      children: [
+                        Expanded(
+                          child: DebouncedTextField(
+                            controller: _descriptionController,
+                            decoration: InputDecoration(
+                              border: InputBorder.none,
+                              isDense: true,
+                            ),
+                            style: TextStyle(
+                              decoration:
+                                  node.done
+                                      ? TextDecoration.lineThrough
+                                      : null,
+                            ),
+                            onChanged: (value) {
+                              widget.onDescriptionChanged(
+                                NodeDescription(content: value),
+                              );
+                            },
+                          ),
+                        ),
+                        if (node.tags.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(left: 8.0),
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(
+                                maxWidth: constraints.maxWidth / 2,
+                              ),
+                              child: Wrap(
+                                spacing: 4.0,
+                                runSpacing: 2.0,
+                                alignment: WrapAlignment.end,
+                                children:
+                                    node.tags.map((tag) {
+                                      final color = TagPalette.getColor(
+                                        widget.tagColors[tag.name],
+                                      );
+                                      return Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 6.0,
+                                          vertical: 2.0,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: color,
+                                          borderRadius: BorderRadius.circular(
+                                            4.0,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          tag.name,
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color: TagPalette.getContrastColor(
+                                              color,
+                                            ),
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      );
+                                    }).toList(),
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
+                ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ClickableIcon(
+                      icon: widget.isEditing ? Icons.check : Icons.edit,
+                      onTap: widget.onEdit,
+                    ),
+                    ClickableIcon(
+                      icon: Icons.add_circle,
+                      onTap: widget.onCreateChild,
+                    ),
+                    ClickableIcon(
+                      icon: Icons.folder_open,
+                      onTap: widget.onEnter,
+                    ),
+                    ClickableIcon(icon: Icons.delete, onTap: widget.onPrune),
+                  ],
+                ),
               ),
-          ],
+              if (widget.isEditing)
+                Padding(
+                  padding: const EdgeInsets.only(
+                    left: 40.0,
+                    right: 16.0,
+                    bottom: 16.0,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      DebouncedTextField(
+                        controller: _detailsController,
+                        minLines: 3,
+                        maxLines: null,
+                        decoration: InputDecoration(
+                          labelText: "Details",
+                          border: OutlineInputBorder(),
+                        ),
+                        onChanged: (value) {
+                          widget.onDetailsChanged(NodeDetails(content: value));
+                        },
+                      ),
+                      const SizedBox(height: 8.0),
+                      TagEditor(
+                        currentTags: node.tags,
+                        allTags: widget.allTags,
+                        tagColors: widget.tagColors,
+                        onAddTag: widget.onAddTag,
+                        onRemoveTag: widget.onRemoveTag,
+                        onSetTagColor: widget.onSetTagColor,
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
