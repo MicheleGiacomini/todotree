@@ -27,6 +27,8 @@ class NodeList extends StatefulWidget {
   final Set<NodeId> nodesBeingEdited;
   final bool allowMultipleEdits;
   final void Function() onToggleMultiEdit;
+  final ThemeMode themeMode;
+  final VoidCallback onToggleTheme;
 
   const NodeList({
     super.key,
@@ -49,6 +51,8 @@ class NodeList extends StatefulWidget {
     required this.nodesBeingEdited,
     required this.allowMultipleEdits,
     required this.onToggleMultiEdit,
+    required this.themeMode,
+    required this.onToggleTheme,
   });
 
   @override
@@ -171,6 +175,13 @@ class _NodeListState extends State<NodeList> {
             ),
           ),
           actions: [
+            ClickableIcon(
+              icon: widget.themeMode == ThemeMode.dark
+                  ? Icons.light_mode
+                  : Icons.dark_mode,
+              color: cp.yellow,
+              onTap: widget.onToggleTheme,
+            ),
             ClickableIcon(
               icon: widget.showDone ? Icons.visibility : Icons.visibility_off,
               color: cp.cyan,

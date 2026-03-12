@@ -9,29 +9,52 @@ import 'domain/element.dart';
 import 'ui/node_view.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  MyApp({super.key});
+
+  final themeModeNotifier = ValueNotifier(ThemeMode.system);
 
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'TodoTree',
-      theme: Catppuccin.latteTheme,
-      darkTheme: Catppuccin.mochaTheme,
-      themeMode: ThemeMode.system,
-      home: const MyHomePage(title: 'TodoTree'),
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: themeModeNotifier,
+      builder: (context, themeMode, child) {
+        return MaterialApp(
+          title: 'TodoTree',
+          theme: Catppuccin.latteTheme,
+          darkTheme: Catppuccin.mochaTheme,
+          themeMode: themeMode,
+          home: MyHomePage(
+            title: 'TodoTree',
+            themeMode: themeMode,
+            onToggleTheme: () {
+              themeModeNotifier.value =
+                  themeMode == ThemeMode.light
+                      ? ThemeMode.dark
+                      : ThemeMode.light;
+            },
+          ),
+        );
+      },
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+  const MyHomePage({
+    super.key,
+    required this.title,
+    required this.themeMode,
+    required this.onToggleTheme,
+  });
 
   final String title;
+  final ThemeMode themeMode;
+  final VoidCallback onToggleTheme;
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
@@ -98,6 +121,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 rootNode: rootId,
                 initialTagList: tags.toSet(),
                 initialTagColors: tagColors,
+                themeMode: widget.themeMode,
+                onToggleTheme: widget.onToggleTheme,
               );
             }
           },
@@ -113,6 +138,8 @@ class _MainPageContent extends StatefulWidget {
   final NodeId rootNode;
   final Set<Tag> initialTagList;
   final Map<String, String> initialTagColors;
+  final ThemeMode themeMode;
+  final VoidCallback onToggleTheme;
 
   const _MainPageContent({
     required this.repository,
@@ -120,6 +147,8 @@ class _MainPageContent extends StatefulWidget {
     required this.rootNode,
     required this.initialTagList,
     required this.initialTagColors,
+    required this.themeMode,
+    required this.onToggleTheme,
   });
 
   @override
@@ -265,6 +294,8 @@ class __MainPageContentState extends State<_MainPageContent> {
             nodesBeingEdited: nodesBeingEdited,
             allowMultipleEdits: allowMultipleEdits,
             onToggleMultiEdit: _onToggleMultiEdit,
+            themeMode: widget.themeMode,
+            onToggleTheme: widget.onToggleTheme,
           ),
         ],
       ),
