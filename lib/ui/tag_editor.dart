@@ -59,42 +59,25 @@ class _TagEditorState extends State<TagEditor> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Wrap(
-          spacing: 8.0,
-          runSpacing: 4.0,
-          children: widget.currentTags.map((tag) {
-            final colorValue = widget.tagColors[tag.name];
-            final backgroundColor = TagPalette.getColor(colorValue);
-            return InputChip(
-              backgroundColor: backgroundColor,
-              label: Text(
-                tag.name,
-                style: TextStyle(
-                  color: TagPalette.getContrastColor(backgroundColor),
-                ),
-              ),
-              onDeleted: () => widget.onRemoveTag(tag),
-              deleteIconColor: TagPalette.getContrastColor(backgroundColor),
-              onPressed: () => _showColorPicker(tag),
-            );
-          }).toList(),
-        ),
-        const SizedBox(height: 8.0),
-        RawAutocomplete<String>(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return RawAutocomplete<String>(
           textEditingController: _controller,
           focusNode: _focusNode,
           optionsBuilder: (TextEditingValue textEditingValue) {
             if (textEditingValue.text.isEmpty) {
               return const <String>[];
             }
-            
-            final choices = widget.allTags
-                .map((t) => t.name)
-                .where((name) => !widget.currentTags.any((ct) => ct.name == name))
-                .toList();
+
+            final choices =
+                widget.allTags
+                    .map((t) => t.name)
+                    .where(
+                      (name) => !widget.currentTags.any(
+                        (ct) => ct.name == name,
+                      ),
+                    )
+                    .toList();
 
             if (choices.isEmpty) {
               return const Iterable<String>.empty();
@@ -115,10 +98,88 @@ class _TagEditorState extends State<TagEditor> {
             return TextField(
               controller: controller,
               focusNode: focusNode,
-              decoration: const InputDecoration(
-                labelText: 'Add Tag',
-                border: OutlineInputBorder(),
+              style: const TextStyle(fontSize: 14),
+              decoration: InputDecoration(
+                hintText: 'Add Tag',
+                border: const OutlineInputBorder(),
                 isDense: true,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 8.0,
+                  vertical: 8.0,
+                ),
+                suffixIcon:
+                    widget.currentTags.isEmpty
+                        ? null
+                        : Padding(
+                          padding: const EdgeInsets.only(right: 8.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxWidth: constraints.maxWidth / 2,
+                                ),
+                                child: Wrap(
+                                  spacing: 4.0,
+                                  runSpacing: 4.0,
+                                  alignment: WrapAlignment.end,
+                                  children:
+                                      widget.currentTags.map((tag) {
+                                        final colorValue =
+                                            widget.tagColors[tag.name];
+                                        final backgroundColor =
+                                            TagPalette.getColor(colorValue);
+                                        final contrastColor =
+                                            TagPalette.getContrastColor(
+                                              backgroundColor,
+                                            );
+                                        return GestureDetector(
+                                          onTap: () => _showColorPicker(tag),
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 6.0,
+                                              vertical: 2.0,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: backgroundColor,
+                                              borderRadius:
+                                                  BorderRadius.circular(4.0),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Text(
+                                                  tag.name,
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: contrastColor,
+                                                    fontWeight: FontWeight.bold,
+                                                    height: 1.0,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 4.0),
+                                                GestureDetector(
+                                                  onTap:
+                                                      () => widget.onRemoveTag(
+                                                        tag,
+                                                      ),
+                                                  child: Icon(
+                                                    Icons.close,
+                                                    size: 12,
+                                                    color: contrastColor,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        );
+                                      }).toList(),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
               ),
               onSubmitted: (value) {
                 _onTagSubmitted(value);
@@ -131,7 +192,10 @@ class _TagEditorState extends State<TagEditor> {
               child: Material(
                 elevation: 4.0,
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxHeight: 200, maxWidth: 300),
+                  constraints: const BoxConstraints(
+                    maxHeight: 200,
+                    maxWidth: 300,
+                  ),
                   child: ListView.builder(
                     padding: EdgeInsets.zero,
                     shrinkWrap: true,
@@ -150,8 +214,8 @@ class _TagEditorState extends State<TagEditor> {
               ),
             );
           },
-        ),
-      ],
+        );
+      },
     );
   }
 }
