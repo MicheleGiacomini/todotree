@@ -133,13 +133,16 @@ class _NodeListState extends State<NodeList> {
   @override
   Widget build(BuildContext context) {
     final nodes = _buildChildren(currentBase, 0);
+    final theme = Theme.of(context);
+    final cp = theme.catppuccin;
+
     return SliverMainAxisGroup(
       slivers: [
         SliverAppBar(
           pinned: true,
           elevation: 0,
           toolbarHeight: 40.0,
-          backgroundColor: Colors.white,
+          backgroundColor: theme.appBarTheme.backgroundColor,
           titleSpacing: 0,
           title: MouseRegion(
             cursor: SystemMouseCursors.click,
@@ -152,12 +155,14 @@ class _NodeListState extends State<NodeList> {
               child: Text(
                 _nodeProvider(currentBase).description.content,
                 overflow: TextOverflow.fade,
+                style: TextStyle(color: cp.text),
               ),
             ),
           ),
           leading: Center(
             child: ClickableIcon(
               icon: Icons.home,
+              color: cp.lavender,
               onTap: () {
                 setState(() {
                   currentBase = widget.treeRoot;
@@ -168,16 +173,19 @@ class _NodeListState extends State<NodeList> {
           actions: [
             ClickableIcon(
               icon: widget.showDone ? Icons.visibility : Icons.visibility_off,
+              color: cp.sky,
               onTap: widget.onToggleShowDone,
             ),
             ClickableIcon(
               icon: widget.allowMultipleEdits
                   ? Icons.layers
                   : Icons.layers_clear,
+              color: cp.pink,
               onTap: widget.onToggleMultiEdit,
             ),
             ClickableIcon(
               icon: Icons.add_circle,
+              color: cp.green,
               onTap: () {
                 widget.onCreateNewAt(currentBase);
               },
@@ -283,7 +291,7 @@ class _NodeListState extends State<NodeList> {
                       childWhenDragging: Opacity(opacity: 0.5, child: nodeView),
                       child: Container(
                         color: candidateData.isNotEmpty
-                            ? Colors.blue.withValues(alpha: 0.2)
+                            ? cp.blue.withValues(alpha: 0.2)
                             : null,
                         child: nodeView,
                       ),
@@ -386,6 +394,7 @@ class _NodeViewState extends State<NodeView> {
   Widget build(BuildContext context) {
     final node = widget.nodeProvider(widget.nodeId);
     final theme = Theme.of(context);
+    final cp = theme.catppuccin;
     final effectiveIconTurns = widget.expanded ? 0.25 : 0.0;
     final opacity = node.done ? 0.5 : 1.0;
 
@@ -414,8 +423,8 @@ class _NodeViewState extends State<NodeView> {
                       duration: widget.animationDuration,
                       child:
                           widget.onExpand == null
-                              ? Icon(Icons.remove)
-                              : Icon(Icons.chevron_right),
+                              ? Icon(Icons.remove, color: cp.overlay0)
+                              : Icon(Icons.chevron_right, color: cp.overlay0),
                     ),
                     Checkbox(
                       value: node.done,
@@ -442,10 +451,12 @@ class _NodeViewState extends State<NodeView> {
                               isDense: true,
                             ),
                             style: TextStyle(
+                              color: cp.text,
                               decoration:
                                   node.done
                                       ? TextDecoration.lineThrough
                                       : null,
+                              decorationColor: cp.overlay0,
                             ),
                             onChanged: (value) {
                               widget.onDescriptionChanged(
@@ -505,17 +516,24 @@ class _NodeViewState extends State<NodeView> {
                   children: [
                     ClickableIcon(
                       icon: widget.isEditing ? Icons.check : Icons.edit,
+                      color: widget.isEditing ? cp.green : cp.blue,
                       onTap: widget.onEdit,
                     ),
                     ClickableIcon(
                       icon: Icons.add_circle,
+                      color: cp.green,
                       onTap: widget.onCreateChild,
                     ),
                     ClickableIcon(
                       icon: Icons.folder_open,
+                      color: cp.peach,
                       onTap: widget.onEnter,
                     ),
-                    ClickableIcon(icon: Icons.delete, onTap: widget.onPrune),
+                    ClickableIcon(
+                      icon: Icons.delete,
+                      color: cp.red,
+                      onTap: widget.onPrune,
+                    ),
                   ],
                 ),
               ),
@@ -533,9 +551,16 @@ class _NodeViewState extends State<NodeView> {
                         controller: _detailsController,
                         minLines: 3,
                         maxLines: null,
+                        style: TextStyle(color: cp.text),
                         decoration: InputDecoration(
                           labelText: "Details",
-                          border: OutlineInputBorder(),
+                          labelStyle: TextStyle(color: cp.overlay0),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: cp.surface1),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: cp.mauve),
+                          ),
                         ),
                         onChanged: (value) {
                           widget.onDetailsChanged(NodeDetails(content: value));

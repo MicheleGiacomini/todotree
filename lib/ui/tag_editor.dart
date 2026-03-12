@@ -95,13 +95,21 @@ class _TagEditorState extends State<TagEditor> {
             _onTagSubmitted(selection);
           },
           fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+            final theme = Theme.of(context);
+            final cp = theme.catppuccin;
             return TextField(
               controller: controller,
               focusNode: focusNode,
-              style: const TextStyle(fontSize: 14),
+              style: TextStyle(fontSize: 14, color: cp.text),
               decoration: InputDecoration(
                 hintText: 'Add Tag',
-                border: const OutlineInputBorder(),
+                hintStyle: TextStyle(color: cp.overlay0),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: cp.surface1),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: cp.mauve),
+                ),
                 isDense: true,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 8.0,
@@ -275,9 +283,12 @@ class _ExcalidrawColorPickerState extends State<_ExcalidrawColorPicker> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cp = theme.catppuccin;
     final shades = TagPalette.getShades(_currentBase);
 
     return Dialog(
+      backgroundColor: cp.base,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: Container(
         padding: const EdgeInsets.all(16),
@@ -288,7 +299,7 @@ class _ExcalidrawColorPickerState extends State<_ExcalidrawColorPicker> {
           children: [
             Text(
               "Colors",
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.grey[700]),
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: cp.subtext1),
             ),
             const SizedBox(height: 12),
             Wrap(
@@ -305,11 +316,11 @@ class _ExcalidrawColorPickerState extends State<_ExcalidrawColorPicker> {
                       color: color,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: isSelected ? Colors.indigo : Colors.grey[300]!,
+                        color: isSelected ? cp.mauve : cp.surface0,
                         width: isSelected ? 2 : 1,
                       ),
                       boxShadow: isSelected
-                          ? [BoxShadow(color: Colors.indigo.withValues(alpha: 0.2), blurRadius: 4)]
+                          ? [BoxShadow(color: cp.mauve.withValues(alpha: 0.2), blurRadius: 4)]
                           : null,
                     ),
                   ),
@@ -319,7 +330,7 @@ class _ExcalidrawColorPickerState extends State<_ExcalidrawColorPicker> {
             const SizedBox(height: 20),
             Text(
               "Shades",
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.grey[700]),
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: cp.subtext1),
             ),
             const SizedBox(height: 12),
             if (shades != null)
@@ -337,7 +348,7 @@ class _ExcalidrawColorPickerState extends State<_ExcalidrawColorPicker> {
                         color: color,
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: isSelected ? Colors.indigo : Colors.grey[300]!,
+                          color: isSelected ? cp.mauve : cp.surface0,
                           width: isSelected ? 2 : 1,
                         ),
                       ),
@@ -348,24 +359,24 @@ class _ExcalidrawColorPickerState extends State<_ExcalidrawColorPicker> {
             else
               Text(
                 "No shades available for this color",
-                style: TextStyle(fontSize: 12, color: Colors.grey[500], fontStyle: FontStyle.italic),
+                style: TextStyle(fontSize: 12, color: cp.subtext0, fontStyle: FontStyle.italic),
               ),
             const SizedBox(height: 20),
             Text(
               "Hex code",
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.grey[700]),
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: cp.subtext1),
             ),
             const SizedBox(height: 12),
             Container(
               decoration: BoxDecoration(
-                color: Colors.grey[50],
+                color: cp.surface0,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey[200]!),
+                border: Border.all(color: cp.surface1),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Row(
                 children: [
-                  Text("#", style: TextStyle(color: Colors.grey[400], fontSize: 16)),
+                  Text("#", style: TextStyle(color: cp.overlay0, fontSize: 16)),
                   const SizedBox(width: 8),
                   Expanded(
                     child: TextField(
@@ -375,14 +386,14 @@ class _ExcalidrawColorPickerState extends State<_ExcalidrawColorPicker> {
                         isDense: true,
                         contentPadding: EdgeInsets.symmetric(vertical: 10),
                       ),
-                      style: const TextStyle(fontFamily: 'monospace', fontSize: 14),
+                      style: TextStyle(fontFamily: 'monospace', fontSize: 14, color: cp.text),
                       onSubmitted: (value) {
                         final color = Color(int.parse("FF$value", radix: 16));
                         _updateColor(color);
                       },
                     ),
                   ),
-                  Icon(Icons.edit_outlined, size: 18, color: Colors.grey[400]),
+                  Icon(Icons.edit_outlined, size: 18, color: cp.overlay0),
                 ],
               ),
             ),
@@ -391,7 +402,7 @@ class _ExcalidrawColorPickerState extends State<_ExcalidrawColorPicker> {
               alignment: Alignment.centerRight,
               child: TextButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text("Done"),
+                child: Text("Done", style: TextStyle(color: cp.mauve)),
               ),
             ),
           ],

@@ -2,6 +2,7 @@ import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
 import 'package:todotree/storage/element_repository.dart';
 import 'package:todotree/storage/json_repository.dart';
+import 'package:todotree/ui/palette.dart';
 import 'package:todotree/utils/random_string.dart';
 
 import 'domain/element.dart';
@@ -18,11 +19,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      title: 'TodoTree',
+      theme: Catppuccin.latte,
+      darkTheme: Catppuccin.mocha,
+      themeMode: ThemeMode.system,
+      home: const MyHomePage(title: 'TodoTree'),
     );
   }
 }

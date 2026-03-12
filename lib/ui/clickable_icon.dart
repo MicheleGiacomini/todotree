@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 class ClickableIcon extends StatefulWidget {
   final void Function()? onTap;
   final IconData icon;
-  const ClickableIcon({super.key, required this.icon, this.onTap});
+  final Color? color;
+
+  const ClickableIcon({super.key, required this.icon, this.onTap, this.color});
 
   @override
   State<ClickableIcon> createState() => _ClickableIconState();
@@ -16,6 +18,8 @@ class _ClickableIconState extends State<ClickableIcon> {
 
   @override
   Widget build(BuildContext context) {
+    final iconColor = widget.color ?? Theme.of(context).iconTheme.color;
+
     return MouseRegion(
       onEnter: (event) => setState(() {
         _hovered = true;
@@ -28,11 +32,11 @@ class _ClickableIconState extends State<ClickableIcon> {
         onTap: widget.onTap,
         child: Stack(
           children: [
-            Icon(widget.icon),
+            Icon(widget.icon, color: iconColor),
             if (_hovered)
               ImageFiltered(
                 imageFilter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                child: Icon(widget.icon),
+                child: Icon(widget.icon, color: iconColor),
               ),
           ],
         ),
