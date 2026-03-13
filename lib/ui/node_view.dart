@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:todotree/domain/element.dart';
 import 'package:todotree/ui/clickable_icon.dart';
 import 'package:todotree/ui/debounced_text_field.dart';
@@ -233,6 +234,7 @@ class _NodeListState extends State<NodeList> {
                     List<dynamic> rejectedData,
                   ) {
                     final id = item.node.id;
+                    final isEditing = widget.nodesBeingEdited.contains(id);
                     final nodeView = NodeView(
                       nodeId: id,
                       nodeProvider: _nodeProvider,
@@ -241,7 +243,7 @@ class _NodeListState extends State<NodeList> {
                       expanded:
                           item.node.children.isNotEmpty &&
                           (expandedNodes[id] ?? false),
-                      isEditing: widget.nodesBeingEdited.contains(id),
+                      isEditing: isEditing,
                       onDescriptionChanged: (p0) {
                         widget.onDescriptionChanged(id, p0);
                       },
@@ -287,24 +289,37 @@ class _NodeListState extends State<NodeList> {
                         widget.onEdit(id);
                       },
                     );
-                    return LongPressDraggable(
-                      delay: Duration(milliseconds: 200),
-                      data: id.toString(),
-                      feedback: Material(
-                        elevation: 10,
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(
-                            maxWidth: MediaQuery.of(context).size.width,
+                    return TapRegion(
+                      enabled: isEditing,
+                      onTapOutside: (_) {
+                        widget.onEdit(id);
+                      },
+                      child: CallbackShortcuts(
+                        bindings: {
+                          const SingleActivator(LogicalKeyboardKey.escape): () {
+                            if (isEditing) widget.onEdit(id);
+                          },
+                        },
+                        child: LongPressDraggable(
+                          delay: Duration(milliseconds: 200),
+                          data: id.toString(),
+                          feedback: Material(
+                            elevation: 10,
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(
+                                maxWidth: MediaQuery.of(context).size.width,
+                              ),
+                              child: nodeView,
+                            ),
                           ),
-                          child: nodeView,
+                          childWhenDragging: Opacity(opacity: 0.5, child: nodeView),
+                          child: Container(
+                            color: candidateData.isNotEmpty
+                                ? cp.blue.withValues(alpha: 0.2)
+                                : null,
+                            child: nodeView,
+                          ),
                         ),
-                      ),
-                      childWhenDragging: Opacity(opacity: 0.5, child: nodeView),
-                      child: Container(
-                        color: candidateData.isNotEmpty
-                            ? cp.blue.withValues(alpha: 0.2)
-                            : null,
-                        child: nodeView,
                       ),
                     );
                   },
@@ -371,6 +386,7 @@ class NodeView extends StatefulWidget {
 class _NodeViewState extends State<NodeView> {
   late final TextEditingController _descriptionController;
   late final TextEditingController _detailsController;
+  late final FocusNode _descriptionFocusNode;
 
   @override
   void initState() {
@@ -380,6 +396,10 @@ class _NodeViewState extends State<NodeView> {
       text: node.description.content,
     );
     _detailsController = TextEditingController(text: node.details.content);
+    _descriptionFocusNode = FocusNode();
+    if (widget.isEditing) {
+      _descriptionFocusNode.requestFocus();
+    }
   }
 
   @override
@@ -392,12 +412,18 @@ class _NodeViewState extends State<NodeView> {
     if (_detailsController.text != node.details.content) {
       _detailsController.text = node.details.content;
     }
+    if (widget.isEditing && !oldWidget.isEditing) {
+      _descriptionFocusNode.requestFocus();
+    } else if (!widget.isEditing && oldWidget.isEditing) {
+      _descriptionFocusNode.unfocus();
+    }
   }
 
   @override
   void dispose() {
     _descriptionController.dispose();
     _detailsController.dispose();
+    _descriptionFocusNode.dispose();
     super.dispose();
   }
 
@@ -424,58 +450,68 @@ class _NodeViewState extends State<NodeView> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              ListTile(
+              InkWell(
                 onTap: widget.onExpand,
-                leading: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    AnimatedRotation(
-                      turns: effectiveIconTurns,
-                      duration: widget.animationDuration,
-                      child:
-                          widget.onExpand == null
-                              ? Icon(Icons.remove, color: cp.brightBlack)
-                              : Icon(Icons.chevron_right, color: cp.brightBlack),
-                    ),
-                    Checkbox(
-                      value: node.done,
-                      onChanged:
-                          canBeMarkedDone
-                              ? (value) {
-                                if (value != null) {
-                                  widget.onDoneChanged(value);
+                onDoubleTap: widget.onEdit,
+                mouseCursor: SystemMouseCursors.click,
+                child: ListTile(
+                  leading: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      AnimatedRotation(
+                        turns: effectiveIconTurns,
+                        duration: widget.animationDuration,
+                        child:
+                            widget.onExpand == null
+                                ? Icon(Icons.remove, color: cp.brightBlack)
+                                : Icon(Icons.chevron_right, color: cp.brightBlack),
+                      ),
+                      Checkbox(
+                        value: node.done,
+                        onChanged:
+                            canBeMarkedDone
+                                ? (value) {
+                                  if (value != null) {
+                                    widget.onDoneChanged(value);
+                                  }
                                 }
-                              }
-                              : null,
-                    ),
-                  ],
-                ),
-                title: LayoutBuilder(
-                  builder: (context, constraints) {
-                    return Row(
-                      children: [
-                        Expanded(
-                          child: DebouncedTextField(
-                            controller: _descriptionController,
-                            decoration: InputDecoration(
-                              border: InputBorder.none,
-                              isDense: true,
+                                : null,
+                      ),
+                    ],
+                  ),
+                  title: LayoutBuilder(
+                    builder: (context, constraints) {
+                      return Row(
+                        children: [
+                          Expanded(
+                            child: IgnorePointer(
+                              ignoring: !widget.isEditing,
+                              child: DebouncedTextField(
+                                controller: _descriptionController,
+                                focusNode: _descriptionFocusNode,
+                                decoration: InputDecoration(
+                                  border: InputBorder.none,
+                                  isDense: true,
+                                ),
+                                style: TextStyle(
+                                  color: cp.foreground,
+                                  decoration:
+                                      node.done
+                                          ? TextDecoration.lineThrough
+                                          : null,
+                                  decorationColor: cp.brightBlack,
+                                ),
+                                onChanged: (value) {
+                                  widget.onDescriptionChanged(
+                                    NodeDescription(content: value),
+                                  );
+                                },
+                                onSubmitted: (_) {
+                                  widget.onEdit();
+                                },
+                              ),
                             ),
-                            style: TextStyle(
-                              color: cp.foreground,
-                              decoration:
-                                  node.done
-                                      ? TextDecoration.lineThrough
-                                      : null,
-                              decorationColor: cp.brightBlack,
-                            ),
-                            onChanged: (value) {
-                              widget.onDescriptionChanged(
-                                NodeDescription(content: value),
-                              );
-                            },
                           ),
-                        ),
                         if (node.tags.isNotEmpty)
                           Padding(
                             padding: const EdgeInsets.only(left: 8.0),
@@ -553,7 +589,8 @@ class _NodeViewState extends State<NodeView> {
                   ],
                 ),
               ),
-              if (widget.isEditing)
+            ),
+            if (widget.isEditing)
                 Padding(
                   padding: const EdgeInsets.only(
                     left: 40.0,
