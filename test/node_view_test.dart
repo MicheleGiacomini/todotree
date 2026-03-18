@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:todotree/domain/element.dart';
 import 'package:todotree/ui/node_view.dart';
+import 'package:todotree/ui/palette.dart';
 
 void main() {
   testWidgets('Checkbox is disabled if children are not done', (
@@ -34,6 +35,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        theme: Catppuccin.latteTheme,
         home: Scaffold(
           body: NodeView(
             nodeId: rootId,
@@ -42,11 +44,13 @@ void main() {
             levelPadding: 20,
             expanded: true,
             isEditing: false,
+            isFocused: false,
             onExpand: () {},
             onEnter: () {},
             onCreateChild: () {},
             onPrune: () {},
             onEdit: () {},
+            onFocus: () {},
             onDescriptionChanged: (_) {},
             onDetailsChanged: (_) {},
             onDoneChanged: (_) {},
@@ -97,6 +101,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        theme: Catppuccin.latteTheme,
         home: Scaffold(
           body: NodeView(
             nodeId: rootId,
@@ -105,11 +110,13 @@ void main() {
             levelPadding: 20,
             expanded: true,
             isEditing: false,
+            isFocused: false,
             onExpand: () {},
             onEnter: () {},
             onCreateChild: () {},
             onPrune: () {},
             onEdit: () {},
+            onFocus: () {},
             onDescriptionChanged: (_) {},
             onDetailsChanged: (_) {},
             onDoneChanged: (_) {},
@@ -151,6 +158,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        theme: Catppuccin.latteTheme,
         home: Scaffold(
           body: NodeView(
             nodeId: rootId,
@@ -159,11 +167,13 @@ void main() {
             levelPadding: 20,
             expanded: true,
             isEditing: false,
+            isFocused: false,
             onExpand: () {},
             onEnter: () {},
             onCreateChild: () {},
             onPrune: () {},
             onEdit: () {},
+            onFocus: () {},
             onDescriptionChanged: (_) {},
             onDetailsChanged: (_) {},
             onDoneChanged: (_) {},
@@ -214,6 +224,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          theme: Catppuccin.latteTheme,
           home: Scaffold(
             body: NodeView(
               nodeId: rootId,
@@ -222,13 +233,14 @@ void main() {
               levelPadding: 20,
               expanded: true,
               isEditing: false,
+              isFocused: false,
               onExpand: () {},
               onEnter: () {},
               onCreateChild: () {},
               onPrune: () {},
               onEdit: () {},
-              onDescriptionChanged: (_) {},
-              onDetailsChanged: (_) {},
+              onFocus: () {},
+              onDescriptionChanged: (_) {},              onDetailsChanged: (_) {},
               onDoneChanged: (_) {},
               onAddTag: (_) {},
               onRemoveTag: (_) {},

@@ -64,4 +64,62 @@ void main() {
     expect(finalElements[childId]!.done, isFalse);
     expect(finalElements[grandchildId]!.done, isFalse);
   });
+
+  test('createNewAt with index inserts at correct position', () async {
+    // Create 3 children: A, B, C
+    final resA = await repository.createNewAt(rootId);
+    final idA = resA.newChild.id;
+    await repository.updateDesription(idA, NodeDescription(content: 'A'));
+
+    final resB = await repository.createNewAt(rootId);
+    final idB = resB.newChild.id;
+    await repository.updateDesription(idB, NodeDescription(content: 'B'));
+
+    final resC = await repository.createNewAt(rootId);
+    final idC = resC.newChild.id;
+    await repository.updateDesription(idC, NodeDescription(content: 'C'));
+
+    // Verify initial order: A, B, C
+    var elements = await repository.getElements();
+    var root = elements[rootId]!;
+    expect(root.children[0], equals(idA));
+    expect(root.children[1], equals(idB));
+    expect(root.children[2], equals(idC));
+
+    // Insert D at index 0 (Before A)
+    final resD = await repository.createNewAt(rootId, index: 0);
+    final idD = resD.newChild.id;
+    await repository.updateDesription(idD, NodeDescription(content: 'D'));
+
+    // Verify order: D, A, B, C
+    elements = await repository.getElements();
+    root = elements[rootId]!;
+    expect(root.children[0], equals(idD));
+    expect(root.children[1], equals(idA));
+    expect(root.children[2], equals(idB));
+    expect(root.children[3], equals(idC));
+
+    // Insert E at index 2 (Between A and B)
+    // Current indices: D(0), A(1), B(2), C(3)
+    // Insert E at 2 -> D, A, E, B, C
+    final resE = await repository.createNewAt(rootId, index: 2);
+    final idE = resE.newChild.id;
+    await repository.updateDesription(idE, NodeDescription(content: 'E'));
+
+    elements = await repository.getElements();
+    root = elements[rootId]!;
+    expect(root.children[0], equals(idD));
+    expect(root.children[1], equals(idA));
+    expect(root.children[2], equals(idE));
+    expect(root.children[3], equals(idB));
+    expect(root.children[4], equals(idC));
+    
+    // Insert F at end (index 5 or null)
+    final resF = await repository.createNewAt(rootId); // Default (append)
+    final idF = resF.newChild.id;
+    
+    elements = await repository.getElements();
+    root = elements[rootId]!;
+    expect(root.children.last, equals(idF));
+  });
 }

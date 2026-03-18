@@ -75,8 +75,8 @@ class JsonRepository extends BaseMapRepository {
   }
 
   @override
-  Future<({Node newChild, Node updatedParent})> createNewAt(NodeId id) async {
-    final result = await super.createNewAt(id);
+  Future<({Node newChild, Node updatedParent})> createNewAt(NodeId id, {int? index}) async {
+    final result = await super.createNewAt(id, index: index);
     await _save();
     return result;
   }

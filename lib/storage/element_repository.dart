@@ -57,7 +57,7 @@ abstract interface class ElementRepository {
   Future<Node> removeTag(NodeId id, Tag tag);
   Future<void> setTagColor(String tagName, String color);
   Future<Map<NodeId, Node>> pruneNode(NodeId id);
-  Future<({Node updatedParent, Node newChild})> createNewAt(NodeId id);
+  Future<({Node updatedParent, Node newChild})> createNewAt(NodeId id, {int? index});
 
   /// Returns the updated parent node with children in the new ordering
   Future<Node> sortChild(

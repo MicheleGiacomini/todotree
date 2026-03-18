@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:todotree/domain/element.dart';
+import 'package:todotree/ui/actions.dart';
 import 'package:todotree/ui/clickable_icon.dart';
 import 'package:todotree/ui/debounced_text_field.dart';
-import 'package:todotree/ui/tag_editor.dart';
+import 'package:todotree/ui/default_keymaps.dart';
+import 'package:todotree/ui/input_system.dart';
 import 'package:todotree/ui/palette.dart';
+import 'package:todotree/ui/tag_editor.dart';
 
 typedef NodeProvider = Node Function(NodeId);
 
 class NodeList extends StatefulWidget {
   final Map<NodeId, Node> nodes;
   final NodeId treeRoot;
-  final void Function(NodeId) onCreateNewAt;
+  final void Function(NodeId, {int? index}) onCreateNewAt;
   final void Function(NodeId) onPrune;
   final void Function(NodeId child, NodeId newParent) onReparent;
   final void Function(NodeId) onEdit;
@@ -73,6 +76,9 @@ class _NodeListState extends State<NodeList> {
   late Map<NodeId, NodeId> parents;
   double levelPadding = 25;
 
+  NodeId? focusedNodeId;
+  late FocusNode listFocusNode;
+
   @override
   void initState() {
     expandedNodes.addAll(widget.nodes.map((k, v) => MapEntry(k, false)));
@@ -81,7 +87,14 @@ class _NodeListState extends State<NodeList> {
         for (final child in node.children) child: node.id,
       },
     };
+    listFocusNode = FocusNode();
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    listFocusNode.dispose();
+    super.dispose();
   }
 
   @override
@@ -141,192 +154,398 @@ class _NodeListState extends State<NodeList> {
     final theme = Theme.of(context);
     final cp = theme.palette;
 
-    return SliverMainAxisGroup(
-      slivers: [
-        SliverAppBar(
-          pinned: true,
-          elevation: 0,
-          toolbarHeight: 40.0,
-          backgroundColor: theme.appBarTheme.backgroundColor,
-          titleSpacing: 0,
-          title: MouseRegion(
-            cursor: SystemMouseCursors.click,
-            child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  currentBase = parents[currentBase] ?? widget.treeRoot;
-                });
-              },
-              child: Text(
-                _nodeProvider(currentBase).description.content,
-                overflow: TextOverflow.fade,
-                style: TextStyle(color: cp.foreground),
+    // Combined KeyMap
+    final keyMap = KeyMap([
+      ...standardKeyMap.bindings,
+      ...vimKeyMap.bindings,
+    ]);
+
+    return Actions(
+      actions: {
+        MoveFocusDownIntent: CallbackAction<MoveFocusDownIntent>(
+          onInvoke: (_) {
+            if (focusedNodeId == null) {
+              if (nodes.isNotEmpty) {
+                setState(() => focusedNodeId = nodes.first.node.id);
+              }
+              return null;
+            }
+            final index = nodes.indexWhere((n) => n.node.id == focusedNodeId);
+            if (index != -1 && index < nodes.length - 1) {
+              setState(() => focusedNodeId = nodes[index + 1].node.id);
+            }
+            return null;
+          },
+        ),
+        MoveFocusUpIntent: CallbackAction<MoveFocusUpIntent>(
+          onInvoke: (_) {
+            if (focusedNodeId == null) {
+              if (nodes.isNotEmpty) {
+                setState(() => focusedNodeId = nodes.last.node.id);
+              }
+              return null;
+            }
+            final index = nodes.indexWhere((n) => n.node.id == focusedNodeId);
+            if (index > 0) {
+              setState(() => focusedNodeId = nodes[index - 1].node.id);
+            }
+            return null;
+          },
+        ),
+        MoveFocusTopIntent: CallbackAction<MoveFocusTopIntent>(
+          onInvoke: (_) {
+            if (nodes.isNotEmpty) {
+              setState(() => focusedNodeId = nodes.first.node.id);
+            }
+            return null;
+          },
+        ),
+        MoveFocusBottomIntent: CallbackAction<MoveFocusBottomIntent>(
+          onInvoke: (_) {
+            if (nodes.isNotEmpty) {
+              setState(() => focusedNodeId = nodes.last.node.id);
+            }
+            return null;
+          },
+        ),
+        CollapseIntent: CallbackAction<CollapseIntent>(
+          onInvoke: (_) {
+            if (focusedNodeId == null) return null;
+            if (expandedNodes[focusedNodeId] == true) {
+              setState(() => expandedNodes[focusedNodeId!] = false);
+            } else {
+              // Move to parent
+              final parentId = parents[focusedNodeId];
+              if (parentId != null && parentId != currentBase) {
+                setState(() => focusedNodeId = parentId);
+              }
+            }
+            return null;
+          },
+        ),
+        ExpandIntent: CallbackAction<ExpandIntent>(
+          onInvoke: (_) {
+            if (focusedNodeId == null) return null;
+            if (expandedNodes[focusedNodeId] != true) {
+              setState(() => expandedNodes[focusedNodeId!] = true);
+            }
+            return null;
+          },
+        ),
+        ToggleExpandIntent: CallbackAction<ToggleExpandIntent>(
+          onInvoke: (_) {
+            if (focusedNodeId == null) return null;
+            setState(() {
+              expandedNodes[focusedNodeId!] =
+                  !(expandedNodes[focusedNodeId!] ?? false);
+            });
+            return null;
+          },
+        ),
+        EditNodeIntent: CallbackAction<EditNodeIntent>(
+          onInvoke: (_) {
+            if (focusedNodeId != null) {
+              widget.onEdit(focusedNodeId!);
+            }
+            return null;
+          },
+        ),
+        ToggleDoneIntent: CallbackAction<ToggleDoneIntent>(
+          onInvoke: (_) {
+            if (focusedNodeId != null) {
+              final node = _nodeProvider(focusedNodeId!);
+              widget.onDoneChanged(focusedNodeId!, !node.done);
+            }
+            return null;
+          },
+        ),
+        DeleteNodeIntent: CallbackAction<DeleteNodeIntent>(
+          onInvoke: (_) {
+            if (focusedNodeId != null) {
+              widget.onPrune(focusedNodeId!);
+              // Correct focus?
+              setState(() => focusedNodeId = null); // Or find next
+            }
+            return null;
+          },
+        ),
+        IndentNodeIntent: CallbackAction<IndentNodeIntent>(
+          onInvoke: (_) {
+            if (focusedNodeId == null) return null;
+            final parent = parents[focusedNodeId];
+            if (parent == null) return null;
+            final parentNode = _nodeProvider(parent);
+            final children = parentNode.children;
+            final index = children.indexOf(focusedNodeId!);
+            if (index > 0) {
+              final newParent = children[index - 1];
+              widget.onReparent(focusedNodeId!, newParent);
+              setState(() => ensureExpanded(newParent));
+            }
+            return null;
+          },
+        ),
+        OutdentNodeIntent: CallbackAction<OutdentNodeIntent>(
+          onInvoke: (_) {
+            if (focusedNodeId == null) return null;
+            final parent = parents[focusedNodeId];
+            if (parent == null || parent == widget.treeRoot) return null;
+            final grandParent = parents[parent];
+            if (grandParent != null) {
+              widget.onReparent(focusedNodeId!, grandParent);
+            }
+            return null;
+          },
+        ),
+        CreateNodeIntent: CallbackAction<CreateNodeIntent>(
+          onInvoke: (_) {
+            if (focusedNodeId != null) {
+              final parentId = parents[focusedNodeId!];
+              if (parentId != null) {
+                final parentNode = _nodeProvider(parentId);
+                final index = parentNode.children.indexOf(focusedNodeId!);
+                if (index != -1) {
+                  widget.onCreateNewAt(parentId, index: index + 1);
+                } else {
+                  widget.onCreateNewAt(parentId);
+                }
+              }
+            } else {
+              widget.onCreateNewAt(currentBase);
+            }
+            return null;
+          },
+        ),
+        CreateNodeAboveIntent: CallbackAction<CreateNodeAboveIntent>(
+          onInvoke: (_) {
+            if (focusedNodeId != null) {
+              final parentId = parents[focusedNodeId!];
+              if (parentId != null) {
+                final parentNode = _nodeProvider(parentId);
+                final index = parentNode.children.indexOf(focusedNodeId!);
+                if (index != -1) {
+                  widget.onCreateNewAt(parentId, index: index);
+                } else {
+                  widget.onCreateNewAt(parentId);
+                }
+              }
+            }
+            return null;
+          },
+        ),
+      },
+      child: InputManager(
+        focusNode: listFocusNode,
+        keyMap: keyMap,
+        enabled: !widget.nodesBeingEdited.isNotEmpty, // Disable when editing
+        child: CustomScrollView(
+          slivers: [
+            SliverMainAxisGroup(
+              slivers: [
+                SliverAppBar(
+              pinned: true,
+              elevation: 0,
+              toolbarHeight: 40.0,
+              backgroundColor: theme.appBarTheme.backgroundColor,
+              titleSpacing: 0,
+              title: MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      currentBase = parents[currentBase] ?? widget.treeRoot;
+                    });
+                  },
+                  child: Text(
+                    _nodeProvider(currentBase).description.content,
+                    overflow: TextOverflow.fade,
+                    style: TextStyle(color: cp.foreground),
+                  ),
+                ),
               ),
+              leading: Center(
+                child: ClickableIcon(
+                  icon: Icons.home,
+                  color: cp.brightBlue,
+                  onTap: () {
+                    setState(() {
+                      currentBase = widget.treeRoot;
+                    });
+                  },
+                ),
+              ),
+              actions: [
+                ClickableIcon(
+                  icon: widget.themeMode == ThemeMode.dark
+                      ? Icons.light_mode
+                      : Icons.dark_mode,
+                  color: cp.yellow,
+                  onTap: widget.onToggleTheme,
+                ),
+                ClickableIcon(
+                  icon: widget.showDone ? Icons.visibility : Icons.visibility_off,
+                  color: cp.cyan,
+                  onTap: widget.onToggleShowDone,
+                ),
+                ClickableIcon(
+                  icon: widget.allowMultipleEdits
+                      ? Icons.layers
+                      : Icons.layers_clear,
+                  color: cp.magenta,
+                  onTap: widget.onToggleMultiEdit,
+                ),
+                ClickableIcon(
+                  icon: Icons.add_circle,
+                  color: cp.green,
+                  onTap: () {
+                    widget.onCreateNewAt(currentBase);
+                  },
+                ),
+              ],
             ),
-          ),
-          leading: Center(
-            child: ClickableIcon(
-              icon: Icons.home,
-              color: cp.brightBlue,
-              onTap: () {
-                setState(() {
-                  currentBase = widget.treeRoot;
-                });
-              },
-            ),
-          ),
-          actions: [
-            ClickableIcon(
-              icon: widget.themeMode == ThemeMode.dark
-                  ? Icons.light_mode
-                  : Icons.dark_mode,
-              color: cp.yellow,
-              onTap: widget.onToggleTheme,
-            ),
-            ClickableIcon(
-              icon: widget.showDone ? Icons.visibility : Icons.visibility_off,
-              color: cp.cyan,
-              onTap: widget.onToggleShowDone,
-            ),
-            ClickableIcon(
-              icon: widget.allowMultipleEdits
-                  ? Icons.layers
-                  : Icons.layers_clear,
-              color: cp.magenta,
-              onTap: widget.onToggleMultiEdit,
-            ),
-            ClickableIcon(
-              icon: Icons.add_circle,
-              color: cp.green,
-              onTap: () {
-                widget.onCreateNewAt(currentBase);
-              },
+            SliverList(
+              delegate: SliverChildBuilderDelegate(childCount: nodes.length, (
+                context,
+                index,
+              ) {
+                final item = nodes[index];
+                final id = item.node.id;
+                final isEditing = widget.nodesBeingEdited.contains(id);
+                final isFocused = id == focusedNodeId;
+
+                return DragTarget<String>(
+                  onWillAcceptWithDetails: (details) {
+                    final data = details.data;
+                    return !_isRecursiveChild(
+                      NodeId.fromString(data),
+                      item.node.id,
+                    );
+                  },
+                  onAcceptWithDetails: (details) {
+                    widget.onReparent(
+                      NodeId.fromString(details.data),
+                      item.node.id,
+                    );
+                    setState(() {
+                      ensureExpanded(item.node.id);
+                    });
+                  },
+                  builder:
+                      (
+                        BuildContext context,
+                        List<String?> candidateData,
+                        List<dynamic> rejectedData,
+                      ) {
+                        
+                        final nodeView = NodeView(
+                          key: ValueKey(id),
+                          nodeId: id,
+                          nodeProvider: _nodeProvider,
+                          level: item.depth,
+                          levelPadding: levelPadding,
+                          expanded:
+                              item.node.children.isNotEmpty &&
+                              (expandedNodes[id] ?? false),
+                          isEditing: isEditing,
+                          isFocused: isFocused, // Passed down
+                          onDescriptionChanged: (p0) {
+                            widget.onDescriptionChanged(id, p0);
+                          },
+                          onDetailsChanged: (p0) {
+                            widget.onDetailsChanged(id, p0);
+                          },
+                          onDoneChanged: (p0) {
+                            widget.onDoneChanged(id, p0);
+                          },
+                          onAddTag: (p0) {
+                            widget.onAddTag(id, p0);
+                          },
+                          onRemoveTag: (p0) {
+                            widget.onRemoveTag(id, p0);
+                          },
+                          onSetTagColor: widget.onSetTagColor,
+                          allTags: widget.allTags,
+                          tagColors: widget.tagColors,
+                          allChildrenDone: _areAllChildrenDone(id),
+                          onExpand: item.node.children.isEmpty
+                              ? null
+                              : () {
+                                  setState(() {
+                                    expandedNodes[id] =
+                                        !(expandedNodes[id] ?? false);
+                                  });
+                                },
+                          onEnter: () {
+                            setState(() {
+                              currentBase = id;
+                            });
+                          },
+                          onCreateChild: () {
+                            setState(() {
+                              expandedNodes[id] = true;
+                            });
+                            widget.onCreateNewAt(id);
+                          },
+                          onPrune: () {
+                            widget.onPrune(id);
+                          },
+                          onEdit: () {
+                            widget.onEdit(id);
+                          },
+                          onFocus: () {
+                            setState(() {
+                              focusedNodeId = id;
+                              listFocusNode.requestFocus();
+                            });
+                          },
+                        );
+                        return TapRegion(
+                          enabled: isEditing,
+                          onTapOutside: (_) {
+                            widget.onEdit(id);
+                            // Return focus to list when stopping edit
+                            listFocusNode.requestFocus();
+                          },
+                          child: CallbackShortcuts(
+                            bindings: {
+                              const SingleActivator(LogicalKeyboardKey.escape): () {
+                                if (isEditing) {
+                                   widget.onEdit(id);
+                                   listFocusNode.requestFocus();
+                                }
+                              },
+                            },
+                            child: LongPressDraggable(
+                              delay: Duration(milliseconds: 200),
+                              data: id.toString(),
+                              feedback: Material(
+                                elevation: 10,
+                                child: ConstrainedBox(
+                                  constraints: BoxConstraints(
+                                    maxWidth: MediaQuery.of(context).size.width,
+                                  ),
+                                  child: nodeView,
+                                ),
+                              ),
+                              childWhenDragging: Opacity(opacity: 0.5, child: nodeView),
+                              child: Container(
+                                color: candidateData.isNotEmpty
+                                    ? cp.blue.withValues(alpha: 0.2)
+                                    : null,
+                                child: nodeView,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                );
+              }),
             ),
           ],
         ),
-        SliverList(
-          delegate: SliverChildBuilderDelegate(childCount: nodes.length, (
-            context,
-            index,
-          ) {
-            final item = nodes[index];
-            return DragTarget<String>(
-              onWillAcceptWithDetails: (details) {
-                final data = details.data;
-                return !_isRecursiveChild(
-                  NodeId.fromString(data),
-                  item.node.id,
-                );
-              },
-              onAcceptWithDetails: (details) {
-                widget.onReparent(
-                  NodeId.fromString(details.data),
-                  item.node.id,
-                );
-                setState(() {
-                  ensureExpanded(item.node.id);
-                });
-              },
-              builder:
-                  (
-                    BuildContext context,
-                    List<String?> candidateData,
-                    List<dynamic> rejectedData,
-                  ) {
-                    final id = item.node.id;
-                    final isEditing = widget.nodesBeingEdited.contains(id);
-                    final nodeView = NodeView(
-                      nodeId: id,
-                      nodeProvider: _nodeProvider,
-                      level: item.depth,
-                      levelPadding: levelPadding,
-                      expanded:
-                          item.node.children.isNotEmpty &&
-                          (expandedNodes[id] ?? false),
-                      isEditing: isEditing,
-                      onDescriptionChanged: (p0) {
-                        widget.onDescriptionChanged(id, p0);
-                      },
-                      onDetailsChanged: (p0) {
-                        widget.onDetailsChanged(id, p0);
-                      },
-                      onDoneChanged: (p0) {
-                        widget.onDoneChanged(id, p0);
-                      },
-                      onAddTag: (p0) {
-                        widget.onAddTag(id, p0);
-                      },
-                      onRemoveTag: (p0) {
-                        widget.onRemoveTag(id, p0);
-                      },
-                      onSetTagColor: widget.onSetTagColor,
-                      allTags: widget.allTags,
-                      tagColors: widget.tagColors,
-                      allChildrenDone: _areAllChildrenDone(id),
-                      onExpand: item.node.children.isEmpty
-                          ? null
-                          : () {
-                              setState(() {
-                                expandedNodes[id] =
-                                    !(expandedNodes[id] ?? false);
-                              });
-                            },
-                      onEnter: () {
-                        setState(() {
-                          currentBase = id;
-                        });
-                      },
-                      onCreateChild: () {
-                        setState(() {
-                          expandedNodes[id] = true;
-                        });
-                        widget.onCreateNewAt(id);
-                      },
-                      onPrune: () {
-                        widget.onPrune(id);
-                      },
-                      onEdit: () {
-                        widget.onEdit(id);
-                      },
-                    );
-                    return TapRegion(
-                      enabled: isEditing,
-                      onTapOutside: (_) {
-                        widget.onEdit(id);
-                      },
-                      child: CallbackShortcuts(
-                        bindings: {
-                          const SingleActivator(LogicalKeyboardKey.escape): () {
-                            if (isEditing) widget.onEdit(id);
-                          },
-                        },
-                        child: LongPressDraggable(
-                          delay: Duration(milliseconds: 200),
-                          data: id.toString(),
-                          feedback: Material(
-                            elevation: 10,
-                            child: ConstrainedBox(
-                              constraints: BoxConstraints(
-                                maxWidth: MediaQuery.of(context).size.width,
-                              ),
-                              child: nodeView,
-                            ),
-                          ),
-                          childWhenDragging: Opacity(opacity: 0.5, child: nodeView),
-                          child: Container(
-                            color: candidateData.isNotEmpty
-                                ? cp.blue.withValues(alpha: 0.2)
-                                : null,
-                            child: nodeView,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-            );
-          }),
+          ],
         ),
-      ],
+      ),
     );
   }
 }
@@ -338,11 +557,13 @@ class NodeView extends StatefulWidget {
   final double levelPadding;
   final bool expanded;
   final bool isEditing;
+  final bool isFocused;
   final void Function()? onExpand;
   final void Function() onEnter;
   final void Function() onCreateChild;
   final void Function() onPrune;
   final void Function() onEdit;
+  final void Function() onFocus;
   final void Function(NodeDescription) onDescriptionChanged;
   final void Function(NodeDetails) onDetailsChanged;
   final void Function(bool) onDoneChanged;
@@ -362,11 +583,13 @@ class NodeView extends StatefulWidget {
     required this.levelPadding,
     required this.expanded,
     required this.isEditing,
+    required this.isFocused,
     required this.onExpand,
     required this.onEnter,
     required this.onCreateChild,
     required this.onPrune,
     required this.onEdit,
+    required this.onFocus,
     required this.onDescriptionChanged,
     required this.onDetailsChanged,
     required this.onDoneChanged,
@@ -437,34 +660,50 @@ class _NodeViewState extends State<NodeView> {
 
     final canBeMarkedDone = node.done || widget.allChildrenDone;
 
+    // Visual indication for focus
+    final decoration = BoxDecoration(
+      color: widget.isFocused ? cp.brightBlack.withValues(alpha: 0.3) : null,
+      border: Border(
+        bottom: BorderSide(color: theme.dividerColor, width: 1.0),
+        left: widget.isFocused 
+            ? BorderSide(color: cp.magenta, width: 4.0) 
+            : BorderSide.none,
+      ),
+    );
+
     return Padding(
       padding: EdgeInsets.only(left: widget.level * widget.levelPadding),
       child: Opacity(
         opacity: opacity,
         child: DecoratedBox(
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(color: theme.dividerColor, width: 1.0),
-            ),
-          ),
+          decoration: decoration,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              InkWell(
-                onTap: widget.onExpand,
+              GestureDetector(
+                onTap: () {
+                   widget.onFocus();
+                   if (widget.onExpand != null) widget.onExpand!();
+                },
                 onDoubleTap: widget.onEdit,
-                mouseCursor: SystemMouseCursors.click,
+                behavior: HitTestBehavior.opaque,
                 child: ListTile(
                   leading: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      AnimatedRotation(
-                        turns: effectiveIconTurns,
-                        duration: widget.animationDuration,
-                        child:
-                            widget.onExpand == null
-                                ? Icon(Icons.remove, color: cp.brightBlack)
-                                : Icon(Icons.chevron_right, color: cp.brightBlack),
+                      GestureDetector(
+                         onTap: () {
+                             widget.onFocus();
+                             if(widget.onExpand != null) widget.onExpand!();
+                         },
+                         child: AnimatedRotation(
+                           turns: effectiveIconTurns,
+                           duration: widget.animationDuration,
+                           child:
+                               widget.onExpand == null
+                                   ? Icon(Icons.remove, color: cp.brightBlack)
+                                   : Icon(Icons.chevron_right, color: cp.brightBlack),
+                         ),
                       ),
                       Checkbox(
                         value: node.done,

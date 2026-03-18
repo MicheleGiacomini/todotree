@@ -58,23 +58,47 @@ abstract class BaseMapRepository implements ElementRepository {
   }
 
   @override
-  Future<({Node newChild, Node updatedParent})> createNewAt(NodeId id) async {
+  Future<({Node newChild, Node updatedParent})> createNewAt(NodeId id, {int? index}) async {
     final newId = NodeId.random();
     final currentParent = nodes[id]!;
+    
+    final Map<NodeId, StorageNode> updates = {};
+    int newIndex;
+
+    if (index != null) {
+      newIndex = index;
+      // Shift existing nodes
+      for (final childId in currentParent.children) {
+        final child = nodes[childId]!;
+        if (child.nodeIndex >= newIndex) {
+          updates[childId] = child.copyWith(nodeIndex: child.nodeIndex + 1);
+        }
+      }
+    } else {
+      newIndex = currentParent.children.length;
+    }
+
     final newNode = StorageNode(
       id: newId,
       parentId: id,
-      nodeIndex: currentParent.children.length,
+      nodeIndex: newIndex,
       description: NodeDescription(content: ""),
       details: NodeDetails(content: ""),
       done: false,
       tags: const ISet.empty(),
       children: const IList.empty(),
     );
+
+    final updatedChildren = currentParent.children.add(newId);
     final updatedParent = currentParent.copyWith(
-      children: currentParent.children.add(newId),
+      children: updatedChildren,
     );
-    nodes.addAll({id: updatedParent, newId: newNode});
+    
+    updates[id] = updatedParent;
+    updates[newId] = newNode;
+    
+    nodes.addAll(updates);
+    
     final updatedParentNode = _buildNode(updatedParent);
     return (newChild: _buildNode(newNode), updatedParent: updatedParentNode);
   }

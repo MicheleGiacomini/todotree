@@ -172,8 +172,8 @@ class __MainPageContentState extends State<_MainPageContent> {
     super.initState();
   }
 
-  Future<void> _createNewAt(NodeId id) async {
-    final result = await widget.repository.createNewAt(id);
+  Future<void> _createNewAt(NodeId id, {int? index}) async {
+    final result = await widget.repository.createNewAt(id, index: index);
     nodes[result.updatedParent.id] = result.updatedParent;
     final updatedChild = await widget.repository.updateDesription(
       result.newChild.id,
@@ -268,36 +268,32 @@ class __MainPageContentState extends State<_MainPageContent> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      body: CustomScrollView(
-        slivers: [
-          NodeList(
-            nodes: nodes,
-            treeRoot: widget.rootNode,
-            onCreateNewAt: _createNewAt,
-            onPrune: _prune,
-            onReparent: _reparent,
-            onEdit: _onEditNode,
-            onDescriptionChanged: _updateDescription,
-            onDetailsChanged: _updateDetails,
-            onDoneChanged: _updateDone,
-            showDone: showDone,
-            onToggleShowDone: () {
-              setState(() {
-                showDone = !showDone;
-              });
-            },
-            onAddTag: _addTag,
-            onRemoveTag: _removeTag,
-            onSetTagColor: _setTagColor,
-            allTags: tags,
-            tagColors: tagColors,
-            nodesBeingEdited: nodesBeingEdited,
-            allowMultipleEdits: allowMultipleEdits,
-            onToggleMultiEdit: _onToggleMultiEdit,
-            themeMode: widget.themeMode,
-            onToggleTheme: widget.onToggleTheme,
-          ),
-        ],
+      body: NodeList(
+        nodes: nodes,
+        treeRoot: widget.rootNode,
+        onCreateNewAt: _createNewAt,
+        onPrune: _prune,
+        onReparent: _reparent,
+        onEdit: _onEditNode,
+        onDescriptionChanged: _updateDescription,
+        onDetailsChanged: _updateDetails,
+        onDoneChanged: _updateDone,
+        showDone: showDone,
+        onToggleShowDone: () {
+          setState(() {
+            showDone = !showDone;
+          });
+        },
+        onAddTag: _addTag,
+        onRemoveTag: _removeTag,
+        onSetTagColor: _setTagColor,
+        allTags: tags,
+        tagColors: tagColors,
+        nodesBeingEdited: nodesBeingEdited,
+        allowMultipleEdits: allowMultipleEdits,
+        onToggleMultiEdit: _onToggleMultiEdit,
+        themeMode: widget.themeMode,
+        onToggleTheme: widget.onToggleTheme,
       ),
     );
   }
